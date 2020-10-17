@@ -26,14 +26,14 @@ public:
   };  // Leaf
   void visit(Call &call) override {
     if (call.vargs) {
-      for (Expression *expr : *call.vargs) {
+      for (std::shared_ptr<Expression> expr : *call.vargs) {
         expr->accept(*this);
       }
     }
   };
   void visit(Map &map) override {
     if (map.vargs) {
-      for (Expression *expr : *map.vargs) {
+      for (std::shared_ptr<Expression> expr : *map.vargs) {
         expr->accept(*this);
       }
     }
@@ -62,7 +62,7 @@ public:
   };
   void visit(Tuple &tuple) override
   {
-    for (Expression *expr : *tuple.elems)
+    for (std::shared_ptr<Expression> expr : *tuple.elems)
       expr->accept(*this);
   };
   void visit(ExprStatement &expr) override {
@@ -78,18 +78,18 @@ public:
   void visit(If &if_block) override {
     if_block.cond->accept(*this);
 
-    for (Statement *stmt : *if_block.stmts) {
+    for (std::shared_ptr<Statement> stmt : *if_block.stmts) {
       stmt->accept(*this);
     }
 
     if (if_block.else_stmts) {
-      for (Statement *stmt : *if_block.else_stmts) {
+      for (std::shared_ptr<Statement> stmt : *if_block.else_stmts) {
         stmt->accept(*this);
       }
     }
   };
   void visit(Unroll &unroll) override {
-    for (Statement *stmt : *unroll.stmts) {
+    for (std::shared_ptr<Statement> stmt : *unroll.stmts) {
       stmt->accept(*this);
     }
   };
@@ -97,7 +97,7 @@ public:
   {
     while_block.cond->accept(*this);
 
-    for (Statement *stmt : *while_block.stmts)
+    for (std::shared_ptr<Statement> stmt : *while_block.stmts)
     {
       stmt->accept(*this);
     }
@@ -108,34 +108,34 @@ public:
   void visit(__attribute__((unused)) AttachPoint &ap) override { };  // Leaf
   void visit(Probe &probe) override {
     probe_ = &probe;
-    for (AttachPoint *ap : *probe.attach_points) {
+    for (std::shared_ptr<AttachPoint> ap : *probe.attach_points) {
       ap->accept(*this);
     }
     if (probe.pred) {
       probe.pred->accept(*this);
     }
-    for (Statement *stmt : *probe.stmts) {
+    for (std::shared_ptr<Statement> stmt : *probe.stmts) {
       stmt->accept(*this);
     }
   };
   void visit(Program &program) override {
-    for (Probe *probe : *program.probes)
+    for (std::shared_ptr<Probe> probe : *program.probes)
       probe->accept(*this);
   };
 
-  void analyse(Probe *probe) {
-    probe_ = probe;
+  void analyse(std::shared_ptr<Probe> probe) {
+    probe_ = probe.get();
     probe->accept(*this);
   }
 private:
-  Probe *probe_;
+  Probe* probe_;
 };
 } // namespace ast
 
 class TracepointFormatParser
 {
 public:
-  static bool parse(ast::Program *program, BPFtrace &bpftrace);
+  static bool parse(std::shared_ptr<ast::Program> program, BPFtrace &bpftrace);
   static std::string get_struct_name(const std::string &category,
                                      const std::string &event_name);
   static std::string get_struct_name(const std::string &probe_id);

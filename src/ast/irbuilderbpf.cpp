@@ -607,7 +607,7 @@ Value *IRBuilderBPF::CreateUSDTReadArgument(Value *ctx,
 }
 
 Value *IRBuilderBPF::CreateUSDTReadArgument(Value *ctx,
-                                            AttachPoint *attach_point,
+                                            std::shared_ptr<AttachPoint> attach_point,
                                             int usdt_location_index,
                                             int arg_num,
                                             Builtin &builtin,

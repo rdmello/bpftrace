@@ -13,11 +13,11 @@ namespace bpftrace {
 
 std::set<std::string> TracepointFormatParser::struct_list;
 
-bool TracepointFormatParser::parse(ast::Program *program, BPFtrace &bpftrace)
+bool TracepointFormatParser::parse(std::shared_ptr<ast::Program> program, BPFtrace &bpftrace)
 {
-  std::vector<ast::Probe*> probes_with_tracepoint;
-  for (ast::Probe *probe : *program->probes)
-    for (ast::AttachPoint *ap : *probe->attach_points)
+  std::vector<std::shared_ptr<ast::Probe>> probes_with_tracepoint;
+  for (std::shared_ptr<ast::Probe> probe : *program->probes)
+    for (std::shared_ptr<ast::AttachPoint> ap : *probe->attach_points)
       if (ap->provider == "tracepoint") {
         probes_with_tracepoint.push_back(probe);
         continue;
@@ -29,11 +29,11 @@ bool TracepointFormatParser::parse(ast::Program *program, BPFtrace &bpftrace)
   ast::TracepointArgsVisitor n{};
   if (!bpftrace.btf_.has_data())
     program->c_definitions += "#include <linux/types.h>\n";
-  for (ast::Probe *probe : probes_with_tracepoint)
+  for (std::shared_ptr<ast::Probe> probe : probes_with_tracepoint)
   {
     n.analyse(probe);
 
-    for (ast::AttachPoint *ap : *probe->attach_points)
+    for (std::shared_ptr<ast::AttachPoint> ap : *probe->attach_points)
     {
       if (ap->provider == "tracepoint")
       {

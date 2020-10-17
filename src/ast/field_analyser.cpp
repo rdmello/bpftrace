@@ -86,7 +86,7 @@ void FieldAnalyser::visit(Builtin &builtin)
 void FieldAnalyser::visit(Call &call)
 {
   if (call.vargs) {
-    for (Expression *expr : *call.vargs) {
+    for (std::shared_ptr<Expression> expr : *call.vargs) {
       expr->accept(*this);
     }
   }
@@ -96,7 +96,7 @@ void FieldAnalyser::visit(Map &map)
 {
   MapKey key;
   if (map.vargs) {
-    for (Expression *expr : *map.vargs) {
+    for (std::shared_ptr<Expression> expr : *map.vargs) {
       expr->accept(*this);
     }
   }
@@ -141,7 +141,7 @@ void FieldAnalyser::visit(While &while_block)
 {
   while_block.cond->accept(*this);
 
-  for (Statement *stmt : *while_block.stmts)
+  for (std::shared_ptr<Statement> stmt : *while_block.stmts)
   {
     stmt->accept(*this);
   }
@@ -151,12 +151,12 @@ void FieldAnalyser::visit(If &if_block)
 {
   if_block.cond->accept(*this);
 
-  for (Statement *stmt : *if_block.stmts) {
+  for (std::shared_ptr<Statement> stmt : *if_block.stmts) {
     stmt->accept(*this);
   }
 
   if (if_block.else_stmts) {
-    for (Statement *stmt : *if_block.else_stmts) {
+    for (std::shared_ptr<Statement> stmt : *if_block.else_stmts) {
       stmt->accept(*this);
     }
   }
@@ -165,7 +165,7 @@ void FieldAnalyser::visit(If &if_block)
 void FieldAnalyser::visit(Unroll &unroll)
 {
   // visit statements in unroll once
-  for (Statement *stmt : *unroll.stmts)
+  for (std::shared_ptr<Statement> stmt : *unroll.stmts)
   {
     stmt->accept(*this);
   }
@@ -213,7 +213,7 @@ void FieldAnalyser::visit(Cast &cast)
 
 void FieldAnalyser::visit(Tuple &tuple)
 {
-  for (Expression *expr : *tuple.elems)
+  for (std::shared_ptr<Expression> expr : *tuple.elems)
     expr->accept(*this);
 }
 
@@ -374,7 +374,7 @@ void FieldAnalyser::visit(Probe &probe)
   has_mixed_args_ = false;
   probe_ = &probe;
 
-  for (AttachPoint *ap : *probe.attach_points) {
+  for (std::shared_ptr<AttachPoint> ap : *probe.attach_points) {
     ap->accept(*this);
     ProbeType pt = probetype(ap->provider);
     prog_type_ = progtype(pt);
@@ -382,14 +382,14 @@ void FieldAnalyser::visit(Probe &probe)
   if (probe.pred) {
     probe.pred->accept(*this);
   }
-  for (Statement *stmt : *probe.stmts) {
+  for (std::shared_ptr<Statement> stmt : *probe.stmts) {
     stmt->accept(*this);
   }
 }
 
 void FieldAnalyser::visit(Program &program)
 {
-  for (Probe *probe : *program.probes)
+  for (std::shared_ptr<Probe> probe : *program.probes)
     probe->accept(*this);
 }
 

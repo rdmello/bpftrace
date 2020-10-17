@@ -13,7 +13,7 @@ namespace ast {
 class AttachPointParser
 {
 public:
-  AttachPointParser(Program *root, BPFtrace &bpftrace, std::ostream &sink);
+  AttachPointParser(std::shared_ptr<Program> root, BPFtrace &bpftrace, std::ostream &sink);
   ~AttachPointParser() = default;
   int parse();
 
@@ -46,7 +46,7 @@ private:
   int watchpoint_parser();
   int kfunc_parser();
 
-  Program *root_{ nullptr }; // Non-owning pointer
+  std::shared_ptr<Program> root_;
   BPFtrace &bpftrace_;
   std::ostream &sink_;
   AttachPoint *ap_{ nullptr }; // Non-owning pointer

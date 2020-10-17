@@ -118,12 +118,12 @@ Call::Call(const std::string &func, location loc)
 {
 }
 
-Call::Call(const std::string &func, ExpressionList *vargs)
+Call::Call(const std::string &func, std::shared_ptr<ExpressionList> vargs)
     : func(is_deprecated(func)), vargs(vargs)
 {
 }
 
-Call::Call(const std::string &func, ExpressionList *vargs, location loc)
+Call::Call(const std::string &func, std::shared_ptr<ExpressionList> vargs, location loc)
     : Expression(loc), func(is_deprecated(func)), vargs(vargs)
 {
 }
@@ -138,13 +138,13 @@ Map::Map(const std::string &ident, location loc)
   is_map = true;
 }
 
-Map::Map(const std::string &ident, ExpressionList *vargs)
+Map::Map(const std::string &ident, std::shared_ptr<ExpressionList> vargs)
     : ident(ident), vargs(vargs)
 {
   is_map = true;
 }
 
-Map::Map(const std::string &ident, ExpressionList *vargs, location loc)
+Map::Map(const std::string &ident, std::shared_ptr<ExpressionList> vargs, location loc)
     : Expression(loc), ident(ident), vargs(vargs)
 {
   is_map = true;
@@ -173,7 +173,7 @@ void Variable::accept(Visitor &v) {
   v.visit(*this);
 }
 
-Binop::Binop(Expression *left, int op, Expression *right, location loc)
+Binop::Binop(std::shared_ptr<Expression> left, int op, std::shared_ptr<Expression> right, location loc)
     : Expression(loc), left(left), right(right), op(op)
 {
 }
@@ -182,12 +182,12 @@ void Binop::accept(Visitor &v) {
   v.visit(*this);
 }
 
-Unop::Unop(int op, Expression *expr, location loc)
+Unop::Unop(int op, std::shared_ptr<Expression> expr, location loc)
     : Expression(loc), expr(expr), op(op), is_post_op(false)
 {
 }
 
-Unop::Unop(int op, Expression *expr, bool is_post_op, location loc)
+Unop::Unop(int op, std::shared_ptr<Expression> expr, bool is_post_op, location loc)
     : Expression(loc), expr(expr), op(op), is_post_op(is_post_op)
 {
 }
@@ -196,14 +196,14 @@ void Unop::accept(Visitor &v) {
   v.visit(*this);
 }
 
-Ternary::Ternary(Expression *cond, Expression *left, Expression *right)
+Ternary::Ternary(std::shared_ptr<Expression> cond, std::shared_ptr<Expression> left, std::shared_ptr<Expression> right)
     : cond(cond), left(left), right(right)
 {
 }
 
-Ternary::Ternary(Expression *cond,
-                 Expression *left,
-                 Expression *right,
+Ternary::Ternary(std::shared_ptr<Expression> cond,
+                 std::shared_ptr<Expression> left,
+                 std::shared_ptr<Expression> right,
                  location loc)
     : Expression(loc), cond(cond), left(left), right(right)
 {
@@ -213,19 +213,19 @@ void Ternary::accept(Visitor &v) {
   v.visit(*this);
 }
 
-FieldAccess::FieldAccess(Expression *expr, const std::string &field)
+FieldAccess::FieldAccess(std::shared_ptr<Expression> expr, const std::string &field)
     : expr(expr), field(field)
 {
 }
 
-FieldAccess::FieldAccess(Expression *expr,
+FieldAccess::FieldAccess(std::shared_ptr<Expression> expr,
                          const std::string &field,
                          location loc)
     : Expression(loc), expr(expr), field(field)
 {
 }
 
-FieldAccess::FieldAccess(Expression *expr, ssize_t index, location loc)
+FieldAccess::FieldAccess(std::shared_ptr<Expression> expr, ssize_t index, location loc)
     : Expression(loc), expr(expr), index(index)
 {
 }
@@ -234,12 +234,12 @@ void FieldAccess::accept(Visitor &v) {
   v.visit(*this);
 }
 
-ArrayAccess::ArrayAccess(Expression *expr, Expression *indexpr)
+ArrayAccess::ArrayAccess(std::shared_ptr<Expression> expr, std::shared_ptr<Expression> indexpr)
     : expr(expr), indexpr(indexpr)
 {
 }
 
-ArrayAccess::ArrayAccess(Expression *expr, Expression *indexpr, location loc)
+ArrayAccess::ArrayAccess(std::shared_ptr<Expression> expr, std::shared_ptr<Expression> indexpr, location loc)
     : Expression(loc), expr(expr), indexpr(indexpr)
 {
 }
@@ -248,14 +248,14 @@ void ArrayAccess::accept(Visitor &v) {
   v.visit(*this);
 }
 
-Cast::Cast(const std::string &type, bool is_pointer, Expression *expr)
+Cast::Cast(const std::string &type, bool is_pointer, std::shared_ptr<Expression> expr)
     : cast_type(type), is_pointer(is_pointer), expr(expr)
 {
 }
 
 Cast::Cast(const std::string &type,
            bool is_pointer,
-           Expression *expr,
+           std::shared_ptr<Expression> expr,
            location loc)
     : Expression(loc), cast_type(type), is_pointer(is_pointer), expr(expr)
 {
@@ -265,7 +265,7 @@ void Cast::accept(Visitor &v) {
   v.visit(*this);
 }
 
-Tuple::Tuple(ExpressionList *elems, location loc)
+Tuple::Tuple(std::shared_ptr<ExpressionList> elems, location loc)
     : Expression(loc), elems(elems)
 {
 }
@@ -279,11 +279,11 @@ Statement::Statement(location loc) : Node(loc)
 {
 }
 
-ExprStatement::ExprStatement(Expression *expr) : expr(expr)
+ExprStatement::ExprStatement(std::shared_ptr<Expression> expr) : expr(expr)
 {
 }
 
-ExprStatement::ExprStatement(Expression *expr, location loc)
+ExprStatement::ExprStatement(std::shared_ptr<Expression> expr, location loc)
     : Statement(loc), expr(expr)
 {
 }
@@ -292,7 +292,7 @@ void ExprStatement::accept(Visitor &v) {
   v.visit(*this);
 }
 
-AssignMapStatement::AssignMapStatement(Map *map, Expression *expr, location loc)
+AssignMapStatement::AssignMapStatement(std::shared_ptr<Map> map, std::shared_ptr<Expression> expr, location loc)
     : Statement(loc), map(map), expr(expr)
 {
   expr->map = map;
@@ -302,14 +302,14 @@ void AssignMapStatement::accept(Visitor &v) {
   v.visit(*this);
 }
 
-AssignVarStatement::AssignVarStatement(Variable *var, Expression *expr)
+AssignVarStatement::AssignVarStatement(std::shared_ptr<Variable> var, std::shared_ptr<Expression> expr)
     : var(var), expr(expr)
 {
   expr->var = var;
 }
 
-AssignVarStatement::AssignVarStatement(Variable *var,
-                                       Expression *expr,
+AssignVarStatement::AssignVarStatement(std::shared_ptr<Variable> var,
+                                       std::shared_ptr<Expression> expr,
                                        location loc)
     : Statement(loc), var(var), expr(expr)
 {
@@ -320,11 +320,11 @@ void AssignVarStatement::accept(Visitor &v) {
   v.visit(*this);
 }
 
-Predicate::Predicate(Expression *expr) : expr(expr)
+Predicate::Predicate(std::shared_ptr<Expression> expr) : expr(expr)
 {
 }
 
-Predicate::Predicate(Expression *expr, location loc) : Node(loc), expr(expr)
+Predicate::Predicate(std::shared_ptr<Expression> expr, location loc) : Node(loc), expr(expr)
 {
 }
 
@@ -341,11 +341,11 @@ void AttachPoint::accept(Visitor &v) {
   v.visit(*this);
 }
 
-If::If(Expression *cond, StatementList *stmts) : cond(cond), stmts(stmts)
+If::If(std::shared_ptr<Expression> cond, std::shared_ptr<StatementList> stmts) : cond(cond), stmts(stmts)
 {
 }
 
-If::If(Expression *cond, StatementList *stmts, StatementList *else_stmts)
+If::If(std::shared_ptr<Expression> cond, std::shared_ptr<StatementList> stmts, std::shared_ptr<StatementList> else_stmts)
     : cond(cond), stmts(stmts), else_stmts(else_stmts)
 {
 }
@@ -354,7 +354,7 @@ void If::accept(Visitor &v) {
   v.visit(*this);
 }
 
-Unroll::Unroll(Expression *expr, StatementList *stmts, location loc)
+Unroll::Unroll(std::shared_ptr<Expression> expr, std::shared_ptr<StatementList> stmts, location loc)
     : Statement(loc), expr(expr), stmts(stmts)
 {
 }
@@ -363,9 +363,9 @@ void Unroll::accept(Visitor &v) {
   v.visit(*this);
 }
 
-Probe::Probe(AttachPointList *attach_points,
-             Predicate *pred,
-             StatementList *stmts)
+Probe::Probe(std::shared_ptr<AttachPointList> attach_points,
+             std::shared_ptr<Predicate> pred,
+             std::shared_ptr<StatementList> stmts)
     : attach_points(attach_points), pred(pred), stmts(stmts)
 {
 }
@@ -384,7 +384,7 @@ void Probe::accept(Visitor &v) {
   v.visit(*this);
 }
 
-Program::Program(const std::string &c_definitions, ProbeList *probes)
+Program::Program(const std::string &c_definitions, std::shared_ptr<ProbeList> probes)
     : c_definitions(c_definitions), probes(probes)
 {
 }

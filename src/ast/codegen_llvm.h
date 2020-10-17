@@ -22,7 +22,7 @@ using CallArgs = std::vector<std::tuple<std::string, std::vector<Field>>>;
 
 class CodegenLLVM : public Visitor {
 public:
-  explicit CodegenLLVM(Node *root, BPFtrace &bpftrace);
+  explicit CodegenLLVM(std::shared_ptr<Node> root, BPFtrace &bpftrace);
 
   void visit(Integer &integer) override;
   void visit(PositionalParameter &param) override;
@@ -105,14 +105,14 @@ private:
                      const std::string &section_name,
                      FunctionType *func_type,
                      bool expansion);
-  [[nodiscard]] ScopedExprDeleter accept(Node *node);
+  [[nodiscard]] ScopedExprDeleter accept(std::shared_ptr<Node> node);
 
   void compareStructure(SizedType &our_type, llvm::Type *llvm_type);
 
   Function *createLog2Function();
   Function *createLinearFunction();
 
-  Node *root_;
+  std::shared_ptr<Node> root_;
   LLVMContext context_;
   std::unique_ptr<Module> module_;
   std::unique_ptr<ExecutionEngine> ee_;
@@ -122,7 +122,7 @@ private:
   Value *expr_ = nullptr;
   std::function<void()> expr_deleter_; // intentionally empty
   Value *ctx_;
-  AttachPoint *current_attach_point_ = nullptr;
+  std::shared_ptr<AttachPoint> current_attach_point_ = nullptr;
   BPFtrace &bpftrace_;
   std::string probefull_;
   std::string tracepoint_struct_;

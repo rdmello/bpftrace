@@ -115,25 +115,25 @@ void yyerror(bpftrace::Driver &driver, const char *s);
 %token <std::string> STACK_MODE "stack_mode"
 
 %type <std::string> c_definitions
-%type <ast::ProbeList *> probes
-%type <ast::Probe *> probe
-%type <ast::Predicate *> pred
-%type <ast::Ternary *> ternary
-%type <ast::StatementList *> block stmts block_or_if
-%type <ast::Statement *> if_stmt block_stmt stmt semicolon_ended_stmt compound_assignment jump_stmt loop_stmt
-%type <ast::Expression *> expr
-%type <ast::Call *> call
-%type <ast::Map *> map
-%type <ast::Variable *> var
-%type <ast::ExpressionList *> vargs
-%type <ast::AttachPointList *> attach_points
-%type <ast::AttachPoint *> attach_point
+%type <std::shared_ptr<ast::ProbeList>> probes
+%type <std::shared_ptr<ast::Probe>> probe
+%type <std::shared_ptr<ast::Predicate>> pred
+%type <std::shared_ptr<ast::Ternary>> ternary
+%type <std::shared_ptr<ast::StatementList>> block stmts block_or_if
+%type <std::shared_ptr<ast::Statement>> if_stmt block_stmt stmt semicolon_ended_stmt compound_assignment jump_stmt loop_stmt
+%type <std::shared_ptr<ast::Expression>> expr
+%type <std::shared_ptr<ast::Call>> call
+%type <std::shared_ptr<ast::Map>> map
+%type <std::shared_ptr<ast::Variable>> var
+%type <std::shared_ptr<ast::ExpressionList>> vargs
+%type <std::shared_ptr<ast::AttachPointList>> attach_points
+%type <std::shared_ptr<ast::AttachPoint>> attach_point
 %type <std::string> attach_point_def
-%type <ast::PositionalParameter *> param
+%type <std::shared_ptr<ast::PositionalParameter>> param
 %type <std::string> ident
-%type <ast::Expression *> map_or_var
-%type <ast::Expression *> pre_post_op
-%type <ast::Integer *> int
+%type <std::shared_ptr<ast::Expression>> map_or_var
+%type <std::shared_ptr<ast::Expression>> pre_post_op
+%type <std::shared_ptr<ast::Integer>> int
 
 %right ASSIGN
 %left QUES COLON
@@ -154,7 +154,7 @@ void yyerror(bpftrace::Driver &driver, const char *s);
 
 %%
 
-program : c_definitions probes { driver.root_ = new ast::Program($1, $2); }
+program : c_definitions probes { driver.root_ = std::make_shared<ast::Program>($1, $2); }
         ;
 
 c_definitions : CPREPROC c_definitions    { $$ = $1 + "\n" + $2; }
@@ -164,17 +164,17 @@ c_definitions : CPREPROC c_definitions    { $$ = $1 + "\n" + $2; }
               ;
 
 probes : probes probe { $$ = $1; $1->push_back($2); }
-       | probe        { $$ = new ast::ProbeList; $$->push_back($1); }
+       | probe        { $$ = std::make_shared<ast::ProbeList>(); $$->push_back($1); }
        ;
 
-probe : attach_points pred block { $$ = new ast::Probe($1, $2, $3); }
+probe : attach_points pred block { $$ = std::make_shared<ast::Probe>($1, $2, $3); }
       ;
 
 attach_points : attach_points "," attach_point { $$ = $1; $1->push_back($3); }
-              | attach_point                   { $$ = new ast::AttachPointList; $$->push_back($1); }
+              | attach_point                   { $$ = std::make_shared<ast::AttachPointList>(); $$->push_back($1); }
               ;
 
-attach_point : attach_point_def                { $$ = new ast::AttachPoint($1, @$); }
+attach_point : attach_point_def                { $$ = std::make_shared<ast::AttachPoint>($1, @$); }
              ;
 
 attach_point_def : attach_point_def ident    { $$ = $1 + $2; }
@@ -201,28 +201,28 @@ attach_point_def : attach_point_def ident    { $$ = $1 + $2; }
                                                // we can give it to the AttachPointParser. This is kind of
                                                // a hack but there doesn't look to be any other way.
                                                $$ = $1 + "$" + std::to_string($2->n);
-                                               delete $2;
                                              }
                  |                           { $$ = ""; }
                  ;
 
-pred : DIV expr ENDPRED { $$ = new ast::Predicate($2, @$); }
+pred : DIV expr ENDPRED { $$ = std::make_shared<ast::Predicate>($2, @$); }
      |                  { $$ = nullptr; }
      ;
 
-ternary : expr QUES expr COLON expr { $$ = new ast::Ternary($1, $3, $5, @$); }
+ternary : expr QUES expr COLON expr { $$ = std::make_shared<ast::Ternary>($1, $3, $5, @$); }
         ;
 
 param : PARAM      {
                      try {
-                       $$ = new ast::PositionalParameter(PositionalParameterType::positional, std::stol($1.substr(1, $1.size()-1)), @$);
+                       const long param_index = std::stol($1.substr(1, $1.size()-1));
+                       $$ = std::make_shared<ast::PositionalParameter>(PositionalParameterType::positional, param_index);
                      } catch (std::exception const& e) {
                        error(@1, "param " + $1 + " is out of integer range [1, " +
                              std::to_string(std::numeric_limits<long>::max()) + "]");
                        YYERROR;
                      }
                    }
-      | PARAMCOUNT { $$ = new ast::PositionalParameter(PositionalParameterType::count, 0, @$); }
+      | PARAMCOUNT { $$ = std::make_shared<ast::PositionalParameter>(PositionalParameterType::count, 0, @$); }
       ;
 
 block : "{" stmts "}"     { $$ = $2; }
@@ -233,8 +233,8 @@ semicolon_ended_stmt: stmt ";"  { $$ = $1; }
 
 stmts : semicolon_ended_stmt stmts { $$ = $2; $2->insert($2->begin(), $1); }
       | block_stmt stmts           { $$ = $2; $2->insert($2->begin(), $1); }
-      | stmt                       { $$ = new ast::StatementList; $$->push_back($1); }
-      |                            { $$ = new ast::StatementList; }
+      | stmt                       { $$ = std::make_shared<ast::StatementList>(); $$->push_back($1); }
+      |                            { $$ = std::make_shared<ast::StatementList>(); }
       ;
 
 block_stmt : if_stmt                  { $$ = $1; }
@@ -242,112 +242,112 @@ block_stmt : if_stmt                  { $$ = $1; }
            | loop_stmt                { $$ = $1; }
            ;
 
-jump_stmt  : BREAK    { $$ = new ast::Jump(token::BREAK, @$); }
-           | CONTINUE { $$ = new ast::Jump(token::CONTINUE, @$); }
-           | RETURN   { $$ = new ast::Jump(token::RETURN, @$); }
+jump_stmt  : BREAK    { $$ = std::make_shared<ast::Jump>(token::BREAK, @$); }
+           | CONTINUE { $$ = std::make_shared<ast::Jump>(token::CONTINUE, @$); }
+           | RETURN   { $$ = std::make_shared<ast::Jump>(token::RETURN, @$); }
            ;
 
-loop_stmt  : UNROLL "(" int ")" block             { $$ = new ast::Unroll($3, $5, @1 + @4); }
-           | UNROLL "(" param ")" block           { $$ = new ast::Unroll($3, $5, @1 + @4); }
-           | WHILE  "(" expr ")" block            { $$ = new ast::While($3, $5, @1); }
+loop_stmt  : UNROLL "(" int ")" block             { $$ = std::make_shared<ast::Unroll>($3, $5, @1 + @4); }
+           | UNROLL "(" param ")" block           { $$ = std::make_shared<ast::Unroll>($3, $5, @1 + @4); }
+           | WHILE  "(" expr ")" block            { $$ = std::make_shared<ast::While>($3, $5, @1); }
            ;
 
-if_stmt : IF "(" expr ")" block                  { $$ = new ast::If($3, $5); }
-        | IF "(" expr ")" block ELSE block_or_if { $$ = new ast::If($3, $5, $7); }
+if_stmt : IF "(" expr ")" block                  { $$ = std::make_shared<ast::If>($3, $5); }
+        | IF "(" expr ")" block ELSE block_or_if { $$ = std::make_shared<ast::If>($3, $5, $7); }
         ;
 
 block_or_if : block        { $$ = $1; }
-            | if_stmt      { $$ = new ast::StatementList; $$->emplace_back($1); }
+            | if_stmt      { $$ = std::make_shared<ast::StatementList>(); $$->emplace_back($1); }
             ;
 
-stmt : expr                { $$ = new ast::ExprStatement($1); }
+stmt : expr                { $$ = std::make_shared<ast::ExprStatement>($1); }
      | compound_assignment { $$ = $1; }
      | jump_stmt           { $$ = $1; }
-     | map "=" expr        { $$ = new ast::AssignMapStatement($1, $3, @2); }
-     | var "=" expr        { $$ = new ast::AssignVarStatement($1, $3, @2); }
+     | map "=" expr        { $$ = std::make_shared<ast::AssignMapStatement>($1, $3, @2); }
+     | var "=" expr        { $$ = std::make_shared<ast::AssignVarStatement>($1, $3, @2); }
      | tuple_assignment
      ;
 
-compound_assignment : map LEFTASSIGN expr  { $$ = new ast::AssignMapStatement($1, new ast::Binop($1, token::LEFT,  $3, @2)); }
-                    | var LEFTASSIGN expr  { $$ = new ast::AssignVarStatement($1, new ast::Binop($1, token::LEFT,  $3, @2)); }
-                    | map RIGHTASSIGN expr { $$ = new ast::AssignMapStatement($1, new ast::Binop($1, token::RIGHT, $3, @2)); }
-                    | var RIGHTASSIGN expr { $$ = new ast::AssignVarStatement($1, new ast::Binop($1, token::RIGHT, $3, @2)); }
-                    | map PLUSASSIGN expr  { $$ = new ast::AssignMapStatement($1, new ast::Binop($1, token::PLUS,  $3, @2)); }
-                    | var PLUSASSIGN expr  { $$ = new ast::AssignVarStatement($1, new ast::Binop($1, token::PLUS,  $3, @2)); }
-                    | map MINUSASSIGN expr { $$ = new ast::AssignMapStatement($1, new ast::Binop($1, token::MINUS, $3, @2)); }
-                    | var MINUSASSIGN expr { $$ = new ast::AssignVarStatement($1, new ast::Binop($1, token::MINUS, $3, @2)); }
-                    | map MULASSIGN expr   { $$ = new ast::AssignMapStatement($1, new ast::Binop($1, token::MUL,   $3, @2)); }
-                    | var MULASSIGN expr   { $$ = new ast::AssignVarStatement($1, new ast::Binop($1, token::MUL,   $3, @2)); }
-                    | map DIVASSIGN expr   { $$ = new ast::AssignMapStatement($1, new ast::Binop($1, token::DIV,   $3, @2)); }
-                    | var DIVASSIGN expr   { $$ = new ast::AssignVarStatement($1, new ast::Binop($1, token::DIV,   $3, @2)); }
-                    | map MODASSIGN expr   { $$ = new ast::AssignMapStatement($1, new ast::Binop($1, token::MOD,   $3, @2)); }
-                    | var MODASSIGN expr   { $$ = new ast::AssignVarStatement($1, new ast::Binop($1, token::MOD,   $3, @2)); }
-                    | map BANDASSIGN expr  { $$ = new ast::AssignMapStatement($1, new ast::Binop($1, token::BAND,  $3, @2)); }
-                    | var BANDASSIGN expr  { $$ = new ast::AssignVarStatement($1, new ast::Binop($1, token::BAND,  $3, @2)); }
-                    | map BORASSIGN expr   { $$ = new ast::AssignMapStatement($1, new ast::Binop($1, token::BOR,   $3, @2)); }
-                    | var BORASSIGN expr   { $$ = new ast::AssignVarStatement($1, new ast::Binop($1, token::BOR,   $3, @2)); }
-                    | map BXORASSIGN expr  { $$ = new ast::AssignMapStatement($1, new ast::Binop($1, token::BXOR,  $3, @2)); }
-                    | var BXORASSIGN expr  { $$ = new ast::AssignVarStatement($1, new ast::Binop($1, token::BXOR,  $3, @2)); }
+compound_assignment : map LEFTASSIGN expr  { $$ = std::make_shared<ast::AssignMapStatement>($1, std::make_shared<ast::Binop>($1, token::LEFT,  $3, @2)); }
+                    | var LEFTASSIGN expr  { $$ = std::make_shared<ast::AssignVarStatement>($1, std::make_shared<ast::Binop>($1, token::LEFT,  $3, @2)); }
+                    | map RIGHTASSIGN expr { $$ = std::make_shared<ast::AssignMapStatement>($1, std::make_shared<ast::Binop>($1, token::RIGHT, $3, @2)); }
+                    | var RIGHTASSIGN expr { $$ = std::make_shared<ast::AssignVarStatement>($1, std::make_shared<ast::Binop>($1, token::RIGHT, $3, @2)); }
+                    | map PLUSASSIGN expr  { $$ = std::make_shared<ast::AssignMapStatement>($1, std::make_shared<ast::Binop>($1, token::PLUS,  $3, @2)); }
+                    | var PLUSASSIGN expr  { $$ = std::make_shared<ast::AssignVarStatement>($1, std::make_shared<ast::Binop>($1, token::PLUS,  $3, @2)); }
+                    | map MINUSASSIGN expr { $$ = std::make_shared<ast::AssignMapStatement>($1, std::make_shared<ast::Binop>($1, token::MINUS, $3, @2)); }
+                    | var MINUSASSIGN expr { $$ = std::make_shared<ast::AssignVarStatement>($1, std::make_shared<ast::Binop>($1, token::MINUS, $3, @2)); }
+                    | map MULASSIGN expr   { $$ = std::make_shared<ast::AssignMapStatement>($1, std::make_shared<ast::Binop>($1, token::MUL,   $3, @2)); }
+                    | var MULASSIGN expr   { $$ = std::make_shared<ast::AssignVarStatement>($1, std::make_shared<ast::Binop>($1, token::MUL,   $3, @2)); }
+                    | map DIVASSIGN expr   { $$ = std::make_shared<ast::AssignMapStatement>($1, std::make_shared<ast::Binop>($1, token::DIV,   $3, @2)); }
+                    | var DIVASSIGN expr   { $$ = std::make_shared<ast::AssignVarStatement>($1, std::make_shared<ast::Binop>($1, token::DIV,   $3, @2)); }
+                    | map MODASSIGN expr   { $$ = std::make_shared<ast::AssignMapStatement>($1, std::make_shared<ast::Binop>($1, token::MOD,   $3, @2)); }
+                    | var MODASSIGN expr   { $$ = std::make_shared<ast::AssignVarStatement>($1, std::make_shared<ast::Binop>($1, token::MOD,   $3, @2)); }
+                    | map BANDASSIGN expr  { $$ = std::make_shared<ast::AssignMapStatement>($1, std::make_shared<ast::Binop>($1, token::BAND,  $3, @2)); }
+                    | var BANDASSIGN expr  { $$ = std::make_shared<ast::AssignVarStatement>($1, std::make_shared<ast::Binop>($1, token::BAND,  $3, @2)); }
+                    | map BORASSIGN expr   { $$ = std::make_shared<ast::AssignMapStatement>($1, std::make_shared<ast::Binop>($1, token::BOR,   $3, @2)); }
+                    | var BORASSIGN expr   { $$ = std::make_shared<ast::AssignVarStatement>($1, std::make_shared<ast::Binop>($1, token::BOR,   $3, @2)); }
+                    | map BXORASSIGN expr  { $$ = std::make_shared<ast::AssignMapStatement>($1, std::make_shared<ast::Binop>($1, token::BXOR,  $3, @2)); }
+                    | var BXORASSIGN expr  { $$ = std::make_shared<ast::AssignVarStatement>($1, std::make_shared<ast::Binop>($1, token::BXOR,  $3, @2)); }
                     ;
 
 tuple_assignment : expr DOT INT "=" expr { error(@1 + @5, "Tuples are immutable once created. Consider creating a new tuple and assigning it instead."); YYERROR; }
 
-int : MINUS INT    { $$ = new ast::Integer(-1 * $2, @$); }
-    | INT          { $$ = new ast::Integer($1, @$); }
+int : MINUS INT    { $$ = std::make_shared<ast::Integer>(-1 * $2, @$); }
+    | INT          { $$ = std::make_shared<ast::Integer>($1, @$); }
     ;
 
 expr : int                                      { $$ = $1; }
-     | STRING                                   { $$ = new ast::String($1, @$); }
-     | BUILTIN                                  { $$ = new ast::Builtin($1, @$); }
-     | CALL_BUILTIN                             { $$ = new ast::Builtin($1, @$); }
-     | IDENT                                    { $$ = new ast::Identifier($1, @$); }
-     | STACK_MODE                               { $$ = new ast::StackMode($1, @$); }
+     | STRING                                   { $$ = std::make_shared<ast::String>($1, @$); }
+     | BUILTIN                                  { $$ = std::make_shared<ast::Builtin>($1, @$); }
+     | CALL_BUILTIN                             { $$ = std::make_shared<ast::Builtin>($1, @$); }
+     | IDENT                                    { $$ = std::make_shared<ast::Identifier>($1, @$); }
+     | STACK_MODE                               { $$ = std::make_shared<ast::StackMode>($1, @$); }
      | ternary                                  { $$ = $1; }
      | param                                    { $$ = $1; }
      | map_or_var                               { $$ = $1; }
      | call                                     { $$ = $1; }
      | "(" expr ")"                             { $$ = $2; }
-     | expr EQ expr                             { $$ = new ast::Binop($1, token::EQ, $3, @2); }
-     | expr NE expr                             { $$ = new ast::Binop($1, token::NE, $3, @2); }
-     | expr LE expr                             { $$ = new ast::Binop($1, token::LE, $3, @2); }
-     | expr GE expr                             { $$ = new ast::Binop($1, token::GE, $3, @2); }
-     | expr LT expr                             { $$ = new ast::Binop($1, token::LT, $3, @2); }
-     | expr GT expr                             { $$ = new ast::Binop($1, token::GT, $3, @2); }
-     | expr LAND expr                           { $$ = new ast::Binop($1, token::LAND,  $3, @2); }
-     | expr LOR expr                            { $$ = new ast::Binop($1, token::LOR,   $3, @2); }
-     | expr LEFT expr                           { $$ = new ast::Binop($1, token::LEFT,  $3, @2); }
-     | expr RIGHT expr                          { $$ = new ast::Binop($1, token::RIGHT, $3, @2); }
-     | expr PLUS expr                           { $$ = new ast::Binop($1, token::PLUS,  $3, @2); }
-     | expr MINUS expr                          { $$ = new ast::Binop($1, token::MINUS, $3, @2); }
-     | expr MUL expr                            { $$ = new ast::Binop($1, token::MUL,   $3, @2); }
-     | expr DIV expr                            { $$ = new ast::Binop($1, token::DIV,   $3, @2); }
-     | expr MOD expr                            { $$ = new ast::Binop($1, token::MOD,   $3, @2); }
-     | expr BAND expr                           { $$ = new ast::Binop($1, token::BAND,  $3, @2); }
-     | expr BOR expr                            { $$ = new ast::Binop($1, token::BOR,   $3, @2); }
-     | expr BXOR expr                           { $$ = new ast::Binop($1, token::BXOR,  $3, @2); }
-     | LNOT expr                                { $$ = new ast::Unop(token::LNOT, $2, @1); }
-     | BNOT expr                                { $$ = new ast::Unop(token::BNOT, $2, @1); }
-     | MINUS expr                               { $$ = new ast::Unop(token::MINUS, $2, @1); }
-     | MUL  expr %prec DEREF                    { $$ = new ast::Unop(token::MUL,  $2, @1); }
-     | expr DOT ident                           { $$ = new ast::FieldAccess($1, $3, @2); }
-     | expr DOT INT                             { $$ = new ast::FieldAccess($1, $3, @3); }
-     | expr PTR ident                           { $$ = new ast::FieldAccess(new ast::Unop(token::MUL, $1, @2), $3, @$); }
-     | expr "[" expr "]"                        { $$ = new ast::ArrayAccess($1, $3, @2 + @4); }
-     | "(" IDENT ")" expr %prec CAST            { $$ = new ast::Cast($2, false, $4, @1 + @3); }
-     | "(" IDENT MUL ")" expr %prec CAST        { $$ = new ast::Cast($2, true, $5, @1 + @4); }
+     | expr EQ expr                             { $$ = std::make_shared<ast::Binop>($1, token::EQ, $3, @2); }
+     | expr NE expr                             { $$ = std::make_shared<ast::Binop>($1, token::NE, $3, @2); }
+     | expr LE expr                             { $$ = std::make_shared<ast::Binop>($1, token::LE, $3, @2); }
+     | expr GE expr                             { $$ = std::make_shared<ast::Binop>($1, token::GE, $3, @2); }
+     | expr LT expr                             { $$ = std::make_shared<ast::Binop>($1, token::LT, $3, @2); }
+     | expr GT expr                             { $$ = std::make_shared<ast::Binop>($1, token::GT, $3, @2); }
+     | expr LAND expr                           { $$ = std::make_shared<ast::Binop>($1, token::LAND,  $3, @2); }
+     | expr LOR expr                            { $$ = std::make_shared<ast::Binop>($1, token::LOR,   $3, @2); }
+     | expr LEFT expr                           { $$ = std::make_shared<ast::Binop>($1, token::LEFT,  $3, @2); }
+     | expr RIGHT expr                          { $$ = std::make_shared<ast::Binop>($1, token::RIGHT, $3, @2); }
+     | expr PLUS expr                           { $$ = std::make_shared<ast::Binop>($1, token::PLUS,  $3, @2); }
+     | expr MINUS expr                          { $$ = std::make_shared<ast::Binop>($1, token::MINUS, $3, @2); }
+     | expr MUL expr                            { $$ = std::make_shared<ast::Binop>($1, token::MUL,   $3, @2); }
+     | expr DIV expr                            { $$ = std::make_shared<ast::Binop>($1, token::DIV,   $3, @2); }
+     | expr MOD expr                            { $$ = std::make_shared<ast::Binop>($1, token::MOD,   $3, @2); }
+     | expr BAND expr                           { $$ = std::make_shared<ast::Binop>($1, token::BAND,  $3, @2); }
+     | expr BOR expr                            { $$ = std::make_shared<ast::Binop>($1, token::BOR,   $3, @2); }
+     | expr BXOR expr                           { $$ = std::make_shared<ast::Binop>($1, token::BXOR,  $3, @2); }
+     | LNOT expr                                { $$ = std::make_shared<ast::Unop>(token::LNOT, $2, @1); }
+     | BNOT expr                                { $$ = std::make_shared<ast::Unop>(token::BNOT, $2, @1); }
+     | MINUS expr                               { $$ = std::make_shared<ast::Unop>(token::MINUS, $2, @1); }
+     | MUL  expr %prec DEREF                    { $$ = std::make_shared<ast::Unop>(token::MUL,  $2, @1); }
+     | expr DOT ident                           { $$ = std::make_shared<ast::FieldAccess>($1, $3, @2); }
+     | expr DOT INT                             { $$ = std::make_shared<ast::FieldAccess>($1, $3, @3); }
+     | expr PTR ident                           { $$ = std::make_shared<ast::FieldAccess>(std::make_shared<ast::Unop>(token::MUL, $1, @2), $3, @$); }
+     | expr "[" expr "]"                        { $$ = std::make_shared<ast::ArrayAccess>($1, $3, @2 + @4); }
+     | "(" IDENT ")" expr %prec CAST            { $$ = std::make_shared<ast::Cast>($2, false, $4, @1 + @3); }
+     | "(" IDENT MUL ")" expr %prec CAST        { $$ = std::make_shared<ast::Cast>($2, true, $5, @1 + @4); }
      | "(" expr "," vargs ")"                   {
-                                                  auto args = new ast::ExpressionList;
+                                                  auto args = std::make_shared<ast::ExpressionList>();
                                                   args->emplace_back($2);
                                                   args->insert(args->end(), $4->begin(), $4->end());
-                                                  $$ = new ast::Tuple(args, @$);
+                                                  $$ = std::make_shared<ast::Tuple>(args, @$);
                                                 }
      | pre_post_op                              { $$ = $1; }
      ;
 
-pre_post_op : map_or_var INCREMENT   { $$ = new ast::Unop(token::INCREMENT, $1, true, @2); }
-            | map_or_var DECREMENT   { $$ = new ast::Unop(token::DECREMENT, $1, true, @2); }
-            | INCREMENT map_or_var   { $$ = new ast::Unop(token::INCREMENT, $2, @1); }
-            | DECREMENT map_or_var   { $$ = new ast::Unop(token::DECREMENT, $2, @1); }
+pre_post_op : map_or_var INCREMENT   { $$ = std::make_shared<ast::Unop>(token::INCREMENT, $1, true, @2); }
+            | map_or_var DECREMENT   { $$ = std::make_shared<ast::Unop>(token::DECREMENT, $1, true, @2); }
+            | INCREMENT map_or_var   { $$ = std::make_shared<ast::Unop>(token::INCREMENT, $2, @1); }
+            | DECREMENT map_or_var   { $$ = std::make_shared<ast::Unop>(token::DECREMENT, $2, @1); }
             | ident INCREMENT      { error(@1, "The ++ operator must be applied to a map or variable"); YYERROR; }
             | INCREMENT ident      { error(@1, "The ++ operator must be applied to a map or variable"); YYERROR; }
             | ident DECREMENT      { error(@1, "The -- operator must be applied to a map or variable"); YYERROR; }
@@ -361,10 +361,10 @@ ident : IDENT         { $$ = $1; }
       | STACK_MODE    { $$ = $1; }
       ;
 
-call : CALL "(" ")"                 { $$ = new ast::Call($1, @$); }
-     | CALL "(" vargs ")"           { $$ = new ast::Call($1, $3, @$); }
-     | CALL_BUILTIN  "(" ")"        { $$ = new ast::Call($1, @$); }
-     | CALL_BUILTIN "(" vargs ")"   { $$ = new ast::Call($1, $3, @$); }
+call : CALL "(" ")"                 { $$ = std::make_shared<ast::Call>($1, @$); }
+     | CALL "(" vargs ")"           { $$ = std::make_shared<ast::Call>($1, $3, @$); }
+     | CALL_BUILTIN  "(" ")"        { $$ = std::make_shared<ast::Call>($1, @$); }
+     | CALL_BUILTIN "(" vargs ")"   { $$ = std::make_shared<ast::Call>($1, $3, @$); }
      | IDENT "(" ")"                { error(@1, "Unknown function: " + $1); YYERROR;  }
      | IDENT "(" vargs ")"          { error(@1, "Unknown function: " + $1); YYERROR;  }
      | BUILTIN "(" ")"              { error(@1, "Unknown function: " + $1); YYERROR;  }
@@ -373,11 +373,11 @@ call : CALL "(" ")"                 { $$ = new ast::Call($1, @$); }
      | STACK_MODE "(" vargs ")"     { error(@1, "Unknown function: " + $1); YYERROR;  }
      ;
 
-map : MAP               { $$ = new ast::Map($1, @$); }
-    | MAP "[" vargs "]" { $$ = new ast::Map($1, $3, @$); }
+map : MAP               { $$ = std::make_shared<ast::Map>($1, @$); }
+    | MAP "[" vargs "]" { $$ = std::make_shared<ast::Map>($1, $3, @$); }
     ;
 
-var : VAR { $$ = new ast::Variable($1, @$); }
+var : VAR { $$ = std::make_shared<ast::Variable>($1, @$); }
     ;
 
 map_or_var : var { $$ = $1; }
@@ -385,7 +385,7 @@ map_or_var : var { $$ = $1; }
            ;
 
 vargs : vargs "," expr { $$ = $1; $1->push_back($3); }
-      | expr           { $$ = new ast::ExpressionList; $$->push_back($1); }
+      | expr           { $$ = std::make_shared<ast::ExpressionList>(); $$->push_back($1); }
       ;
 
 %%

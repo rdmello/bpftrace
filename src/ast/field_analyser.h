@@ -11,7 +11,7 @@ namespace ast {
 
 class FieldAnalyser : public Visitor {
 public:
-  explicit FieldAnalyser(Node *root,
+  explicit FieldAnalyser(std::shared_ptr<Node> root,
                          BPFtrace &bpftrace,
                          std::ostream &out = std::cerr)
       : type_(""),
@@ -58,7 +58,7 @@ private:
                     const std::map<std::string, SizedType>& args2);
 
   std::string    type_;
-  Node          *root_;
+  std::shared_ptr<Node> root_;
   BPFtrace      &bpftrace_;
   bpf_prog_type  prog_type_;
   bool           has_builtin_args_;

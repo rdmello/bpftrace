@@ -15,7 +15,7 @@ namespace ast {
 
 class SemanticAnalyser : public Visitor {
 public:
-  explicit SemanticAnalyser(Node *root,
+  explicit SemanticAnalyser(std::shared_ptr<Node> root,
                             BPFtrace &bpftrace,
                             std::ostream &out = std::cerr,
                             bool has_child = true)
@@ -26,7 +26,7 @@ public:
   {
   }
 
-  explicit SemanticAnalyser(Node *root, BPFtrace &bpftrace, bool has_child)
+  explicit SemanticAnalyser(std::shared_ptr<Node> root, BPFtrace &bpftrace, bool has_child)
       : SemanticAnalyser(root, bpftrace, std::cerr, has_child)
   {
   }
@@ -63,7 +63,7 @@ public:
   int analyse();
 
 private:
-  Node *root_;
+  std::shared_ptr<Node> root_;
   BPFtrace &bpftrace_;
   std::ostream &out_;
   std::ostringstream err_;
@@ -86,7 +86,7 @@ private:
 
   void assign_map_type(const Map &map, const SizedType &type);
 
-  void builtin_args_tracepoint(AttachPoint *attach_point, Builtin &builtin);
+  void builtin_args_tracepoint(std::shared_ptr<AttachPoint> attach_point, Builtin &builtin);
   ProbeType single_provider_type(void);
   template <typename T>
   int create_maps_impl(void);
@@ -96,7 +96,7 @@ private:
   {
     return loop_depth_ > 0;
   };
-  void accept_statements(StatementList *stmts);
+  void accept_statements(std::shared_ptr<StatementList> stmts);
 
   Probe *probe_;
   std::string func_;

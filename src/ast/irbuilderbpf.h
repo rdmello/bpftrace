@@ -105,7 +105,7 @@ public:
                                AddrSpace as,
                                const location &loc);
   Value *CreateUSDTReadArgument(Value *ctx,
-                                AttachPoint *attach_point,
+                                std::shared_ptr<AttachPoint> attach_point,
                                 int usdt_location_index,
                                 int arg_name,
                                 Builtin &builtin,

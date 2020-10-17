@@ -16,7 +16,7 @@ class Program;
 class ClangParser
 {
 public:
-  bool parse(ast::Program *program,
+  bool parse(std::shared_ptr<ast::Program> program,
              BPFtrace &bpftrace,
              std::vector<std::string> extra_flags = {});
 

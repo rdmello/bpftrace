@@ -26,7 +26,7 @@
 namespace bpftrace {
 namespace ast {
 
-CodegenLLVM::CodegenLLVM(Node *root, BPFtrace &bpftrace)
+CodegenLLVM::CodegenLLVM(std::shared_ptr<Node> root, BPFtrace &bpftrace)
     : root_(root),
       module_(std::make_unique<Module>("bpftrace", context_)),
       b_(context_, *module_.get(), bpftrace),
@@ -459,10 +459,10 @@ void CodegenLLVM::visit(Call &call)
     auto scoped_del = accept(call.vargs->front());
 
     // prepare arguments
-    Integer *value_arg = static_cast<Integer *>(call.vargs->at(0));
-    Integer *min_arg = static_cast<Integer *>(call.vargs->at(1));
-    Integer *max_arg = static_cast<Integer *>(call.vargs->at(2));
-    Integer *step_arg = static_cast<Integer *>(call.vargs->at(3));
+    auto value_arg = std::static_pointer_cast<Integer>(call.vargs->at(0));
+    auto min_arg = std::static_pointer_cast<Integer>(call.vargs->at(1));
+    auto max_arg = std::static_pointer_cast<Integer>(call.vargs->at(2));
+    auto step_arg = std::static_pointer_cast<Integer>(call.vargs->at(3));
     Value *value, *min, *max, *step;
     auto scoped_del_value_arg = accept(value_arg);
     value = expr_;
@@ -545,8 +545,8 @@ void CodegenLLVM::visit(Call &call)
 
     if (call.vargs->size() > 1)
     {
-      auto &arg = *call.vargs->at(1);
-      auto scoped_del = accept(&arg);
+      std::shared_ptr<Expression> arg = call.vargs->at(1);
+      auto scoped_del = accept(arg);
 
       Value *proposed_length = expr_;
       Value *cmp = b_.CreateICmp(
@@ -554,8 +554,8 @@ void CodegenLLVM::visit(Call &call)
       length = b_.CreateSelect(
           cmp, proposed_length, max_length, "length.select");
 
-      if (arg.is_literal)
-        fixed_buffer_length = static_cast<Integer &>(arg).n;
+      if (arg->is_literal)
+        fixed_buffer_length = std::static_pointer_cast<Integer>(arg)->n;
     }
     else
     {
@@ -905,7 +905,7 @@ void CodegenLLVM::visit(Call &call)
     b_.CreateStore(b_.GetIntSameSize(strftime_id_, elements.at(0)),
                    b_.CreateGEP(buf, { b_.getInt64(0), b_.getInt32(0) }));
     strftime_id_++;
-    Expression *arg = call.vargs->at(1);
+    std::shared_ptr<Expression> arg = call.vargs->at(1);
     auto scoped_del = accept(arg);
     b_.CreateStore(expr_,
                    b_.CreateGEP(buf, { b_.getInt64(0), b_.getInt32(1) }));
@@ -929,10 +929,10 @@ void CodegenLLVM::visit(Call &call)
   }
   else if (call.func == "signal") {
     // int bpf_send_signal(u32 sig)
-    auto &arg = *call.vargs->at(0);
-    if (arg.type.IsStringTy())
+    std::shared_ptr<Expression> arg = call.vargs->at(0);
+    if (arg->type.IsStringTy())
     {
-      auto signame = bpftrace_.get_string_literal(&arg);
+      auto signame = bpftrace_.get_string_literal(arg);
       int sigid = signal_name_to_num(signame);
       // Should be caught in semantic analyser
       if (sigid < 1) {
@@ -941,8 +941,8 @@ void CodegenLLVM::visit(Call &call)
       b_.CreateSignal(ctx_, b_.getInt32(sigid), call.loc);
       return;
     }
-    auto scoped_del = accept(&arg);
-    expr_ = b_.CreateIntCast(expr_, b_.getInt32Ty(), arg.type.IsSigned());
+    auto scoped_del = accept(arg);
+    expr_ = b_.CreateIntCast(expr_, b_.getInt32Ty(), arg->type.IsSigned());
     b_.CreateSignal(ctx_, expr_, call.loc);
   }
   else if (call.func == "sizeof")
@@ -950,7 +950,7 @@ void CodegenLLVM::visit(Call &call)
     expr_ = b_.getInt64(call.vargs->at(0)->type.size);
   }
   else if (call.func == "strncmp") {
-    uint64_t size = static_cast<Integer *>(call.vargs->at(2))->n;
+    uint64_t size = std::static_pointer_cast<Integer>(call.vargs->at(2))->n;
     const auto& left_arg = call.vargs->at(0);
     const auto& right_arg = call.vargs->at(1);
     auto left_as = left_arg->type.GetAS();
@@ -994,9 +994,9 @@ void CodegenLLVM::visit(Call &call)
   {
     // int bpf_override(struct pt_regs *regs, u64 rc)
     // returns: 0
-    auto &arg = *call.vargs->at(0);
-    auto scoped_del = accept(&arg);
-    expr_ = b_.CreateIntCast(expr_, b_.getInt64Ty(), arg.type.IsSigned());
+    auto arg = call.vargs->at(0);
+    auto scoped_del = accept(arg);
+    expr_ = b_.CreateIntCast(expr_, b_.getInt64Ty(), arg->type.IsSigned());
     b_.CreateOverrideReturn(ctx_, expr_);
   }
   else if (call.func == "kptr" || call.func == "uptr")
@@ -1703,7 +1703,7 @@ void CodegenLLVM::visit(Tuple &tuple)
   b_.CREATE_MEMSET(buf, b_.getInt8(0), tuple_size, 1);
   for (size_t i = 0; i < tuple.elems->size(); ++i)
   {
-    Expression *elem = tuple.elems->at(i);
+    std::shared_ptr<Expression> elem = tuple.elems->at(i);
     auto scoped_del = accept(elem);
 
     Value *dst = b_.CreateGEP(buf, { b_.getInt32(0), b_.getInt32(i) });
@@ -1846,7 +1846,7 @@ void CodegenLLVM::visit(If &if_block)
   }
 
   b_.SetInsertPoint(if_true);
-  for (Statement *stmt : *if_block.stmts)
+  for (std::shared_ptr<Statement> stmt : *if_block.stmts)
     auto scoped_del = accept(stmt);
 
   b_.CreateBr(if_end);
@@ -1856,7 +1856,7 @@ void CodegenLLVM::visit(If &if_block)
   if (if_block.else_stmts)
   {
     b_.SetInsertPoint(if_else);
-    for (Statement *stmt : *if_block.else_stmts)
+    for (std::shared_ptr<Statement> stmt : *if_block.else_stmts)
       auto scoped_del = accept(stmt);
 
     b_.CreateBr(if_end);
@@ -1867,7 +1867,7 @@ void CodegenLLVM::visit(If &if_block)
 void CodegenLLVM::visit(Unroll &unroll)
 {
   for (int i=0; i < unroll.var; i++) {
-    for (Statement *stmt : *unroll.stmts)
+    for (std::shared_ptr<Statement> stmt : *unroll.stmts)
     {
       auto scoped_del = accept(stmt);
     }
@@ -1939,7 +1939,7 @@ void CodegenLLVM::visit(While &while_block)
   b_.CreateCondBr(cond, while_body, while_end);
 
   b_.SetInsertPoint(while_body);
-  for (Statement *stmt : *while_block.stmts)
+  for (std::shared_ptr<Statement> stmt : *while_block.stmts)
   {
     auto scoped_del = accept(stmt);
   }
@@ -2008,7 +2008,7 @@ void CodegenLLVM::generateProbe(Probe &probe,
     auto scoped_del = accept(probe.pred);
   }
   variables_.clear();
-  for (Statement *stmt : *probe.stmts)
+  for (std::shared_ptr<Statement> stmt : *probe.stmts)
   {
     auto scoped_del = accept(stmt);
   }
@@ -2163,7 +2163,7 @@ void CodegenLLVM::visit(Probe &probe)
 
 void CodegenLLVM::visit(Program &program)
 {
-  for (Probe *probe : *program.probes)
+  for (std::shared_ptr<Probe> probe : *program.probes)
     auto scoped_del = accept(probe);
 }
 
@@ -2186,7 +2186,7 @@ AllocaInst *CodegenLLVM::getMapKey(Map &map)
     // A single value as a map key (e.g., @[comm] = 0;)
     if (map.vargs->size() == 1)
     {
-      Expression *expr = map.vargs->at(0);
+      std::shared_ptr<Expression> expr = map.vargs->at(0);
       auto scoped_del = accept(expr);
       if (shouldBeOnStackAlready(expr->type))
       {
@@ -2206,7 +2206,7 @@ AllocaInst *CodegenLLVM::getMapKey(Map &map)
     {
       // Two or more values as a map key (e.g, @[comm, pid] = 1;)
       size_t size = 0;
-      for (Expression *expr : *map.vargs)
+      for (std::shared_ptr<Expression> expr : *map.vargs)
       {
         size += expr->type.size;
       }
@@ -2214,7 +2214,7 @@ AllocaInst *CodegenLLVM::getMapKey(Map &map)
 
       int offset = 0;
       // Construct a map key in the stack
-      for (Expression *expr : *map.vargs)
+      for (std::shared_ptr<Expression> expr : *map.vargs)
       {
         auto scoped_del = accept(expr);
         Value *offset_val = b_.CreateGEP(
@@ -2248,14 +2248,14 @@ AllocaInst *CodegenLLVM::getHistMapKey(Map &map, Value *log2)
   AllocaInst *key;
   if (map.vargs) {
     size_t size = 8; // Extra space for the bucket value
-    for (Expression *expr : *map.vargs)
+    for (std::shared_ptr<Expression> expr : *map.vargs)
     {
       size += expr->type.size;
     }
     key = b_.CreateAllocaBPF(size, map.ident + "_key");
 
     int offset = 0;
-    for (Expression *expr : *map.vargs) {
+    for (std::shared_ptr<Expression> expr : *map.vargs) {
       auto scoped_del = accept(expr);
       Value *offset_val = b_.CreateGEP(key, {b_.getInt64(0), b_.getInt64(offset)});
       if (shouldBeOnStackAlready(expr->type))
@@ -2552,11 +2552,11 @@ void CodegenLLVM::createFormatStringCall(Call &call, int &id, CallArgs &call_arg
 
   for (size_t i=1; i<call.vargs->size(); i++)
   {
-    Expression &arg = *call.vargs->at(i);
-    auto scoped_del = accept(&arg);
+    std::shared_ptr<Expression> arg = call.vargs->at(i);
+    auto scoped_del = accept(arg);
     Value *offset = b_.CreateGEP(fmt_args, {b_.getInt32(0), b_.getInt32(i)});
-    if (needMemcpy(arg.type))
-      b_.CREATE_MEMCPY(offset, expr_, arg.type.size, 1);
+    if (needMemcpy(arg->type))
+      b_.CREATE_MEMCPY(offset, expr_, arg->type.size, 1);
     else
       b_.CreateStore(expr_, offset);
   }
@@ -2613,12 +2613,12 @@ void CodegenLLVM::createPrintMapCall(Call &call)
 
 void CodegenLLVM::createPrintNonMapCall(Call &call, int &id)
 {
-  auto &arg = *call.vargs->at(0);
-  auto scoped_del = accept(&arg);
+  auto arg = call.vargs->at(0);
+  auto scoped_del = accept(arg);
 
-  auto elements = AsyncEvent::PrintNonMap().asLLVMType(b_, arg.type.size);
+  auto elements = AsyncEvent::PrintNonMap().asLLVMType(b_, arg->type.size);
   std::ostringstream struct_name;
-  struct_name << call.func << "_" << arg.type.type << "_" << arg.type.size
+  struct_name << call.func << "_" << arg->type.type << "_" << arg->type.size
               << "_t";
   StructType *print_struct = b_.GetStructType(struct_name.str(),
                                               elements,
@@ -2636,9 +2636,9 @@ void CodegenLLVM::createPrintNonMapCall(Call &call, int &id)
 
   // Store content
   Value *content_offset = b_.CreateGEP(buf, { b_.getInt32(0), b_.getInt32(2) });
-  b_.CREATE_MEMSET(content_offset, b_.getInt8(0), arg.type.size, 1);
-  if (needMemcpy(arg.type))
-    b_.CREATE_MEMCPY(content_offset, expr_, arg.type.size, 1);
+  b_.CREATE_MEMSET(content_offset, b_.getInt8(0), arg->type.size, 1);
+  if (needMemcpy(arg->type))
+    b_.CREATE_MEMCPY(content_offset, expr_, arg->type.size, 1);
   else
   {
     auto ptr = b_.CreatePointerCast(content_offset,
@@ -2748,7 +2748,7 @@ void CodegenLLVM::DumpIR(std::ostream &out)
   module_->print(os, nullptr, false, true);
 }
 
-CodegenLLVM::ScopedExprDeleter CodegenLLVM::accept(Node *node)
+CodegenLLVM::ScopedExprDeleter CodegenLLVM::accept(std::shared_ptr<Node> node)
 {
   expr_deleter_ = nullptr;
   node->accept(*this);

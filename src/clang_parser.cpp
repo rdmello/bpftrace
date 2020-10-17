@@ -616,7 +616,7 @@ std::unordered_set<std::string> ClangParser::get_incomplete_types(
   return type_data.incomplete_types;
 }
 
-bool ClangParser::parse(ast::Program *program, BPFtrace &bpftrace, std::vector<std::string> extra_flags)
+bool ClangParser::parse(std::shared_ptr<ast::Program> program, BPFtrace &bpftrace, std::vector<std::string> extra_flags)
 {
   auto input = "#include <__btf_generated_header.h>\n" + program->c_definitions;
 

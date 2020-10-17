@@ -124,7 +124,7 @@ void SemanticAnalyser::visit(Identifier &identifier)
   }
 }
 
-void SemanticAnalyser::builtin_args_tracepoint(AttachPoint *attach_point,
+void SemanticAnalyser::builtin_args_tracepoint(std::shared_ptr<AttachPoint> attach_point,
                                                Builtin &builtin)
 {
   /*
@@ -450,7 +450,7 @@ void SemanticAnalyser::visit(Call &call)
   func_setter scope_bound_func_setter{ *this, call.func };
 
   if (call.vargs) {
-    for (Expression *expr : *call.vargs) {
+    for (std::shared_ptr<Expression> expr : *call.vargs) {
       expr->accept(*this);
     }
   }
@@ -576,7 +576,7 @@ void SemanticAnalyser::visit(Call &call)
   }
   else if (call.func == "str") {
     if (check_varargs(call, 1, 2)) {
-      auto *arg = call.vargs->at(0);
+      auto arg = call.vargs->at(0);
       auto &t = arg->type;
       if (!t.IsIntegerTy() && !t.IsPtrTy())
       {
@@ -587,13 +587,13 @@ void SemanticAnalyser::visit(Call &call)
       call.type = CreateString(bpftrace_.strlen_);
       if (has_pos_param_)
       {
-        if (dynamic_cast<PositionalParameter *>(arg))
+        if (std::dynamic_pointer_cast<PositionalParameter>(arg))
           call.is_literal = true;
         else
         {
-          auto binop = dynamic_cast<Binop *>(arg);
-          if (!(binop && (dynamic_cast<PositionalParameter *>(binop->left) ||
-                          dynamic_cast<PositionalParameter *>(binop->right))))
+          auto binop = std::dynamic_pointer_cast<Binop>(arg);
+          if (!(binop && (std::dynamic_pointer_cast<PositionalParameter>(binop->left) ||
+                          std::dynamic_pointer_cast<PositionalParameter>(binop->right))))
           {
             // Only str($1), str($1 + CONST), or str(CONST + $1) are allowed
             LOG(ERROR, call.loc, err_)
@@ -1244,7 +1244,7 @@ void SemanticAnalyser::visit(Map &map)
 
   if (map.vargs) {
     for (unsigned int i = 0; i < map.vargs->size(); i++){
-      Expression * expr = map.vargs->at(i);
+      std::shared_ptr<Expression> expr = map.vargs->at(i);
       expr->accept(*this);
 
       // Insert a cast to 64 bits if needed by injecting
@@ -1252,7 +1252,7 @@ void SemanticAnalyser::visit(Map &map)
       if (expr->type.IsIntTy() && expr->type.size < 8)
       {
         std::string type = expr->type.IsSigned() ? "int64" : "uint64";
-        Expression * cast = new ast::Cast(type, false, expr);
+        std::shared_ptr<Expression> cast = std::make_shared<ast::Cast>(type, false, expr);
         cast->accept(*this);
         map.vargs->at(i) = cast;
         expr = cast;
@@ -1349,7 +1349,7 @@ void SemanticAnalyser::visit(ArrayAccess &arr)
 
     if (indextype.IsIntTy() && arr.indexpr->is_literal)
     {
-      Integer *index = static_cast<Integer *>(arr.indexpr);
+      std::shared_ptr<Integer> index = std::static_pointer_cast<Integer>(arr.indexpr);
 
       if ((size_t) index->n >= type.size)
         LOG(ERROR, arr.loc, err_)
@@ -1389,7 +1389,7 @@ void SemanticAnalyser::visit(Binop &binop)
     // Follow what C does
     else if (lhs == Type::integer && rhs == Type::integer) {
       auto get_int_literal = [](const auto expr) -> long {
-        return static_cast<ast::Integer*>(expr)->n;
+        return std::static_pointer_cast<ast::Integer>(expr)->n;
       };
       auto left = binop.left;
       auto right = binop.right;
@@ -1466,12 +1466,12 @@ void SemanticAnalyser::visit(Binop &binop)
       {
         // Check if one of the operands is a positional parameter
         // The other one should be a constant offset
-        auto pos_param = dynamic_cast<PositionalParameter *>(left);
-        auto offset = dynamic_cast<Integer *>(right);
+        auto pos_param = std::dynamic_pointer_cast<PositionalParameter>(left);
+        auto offset = std::dynamic_pointer_cast<Integer>(right);
         if (!pos_param)
         {
-          pos_param = dynamic_cast<PositionalParameter *>(right);
-          offset = dynamic_cast<Integer *>(left);
+          pos_param = std::dynamic_pointer_cast<PositionalParameter>(right);
+          offset = std::dynamic_pointer_cast<Integer>(left);
         }
 
         if (pos_param)
@@ -1652,11 +1652,11 @@ void SemanticAnalyser::visit(Unroll &unroll)
 
   unroll.var = 0;
 
-  if (auto *integer = dynamic_cast<Integer *>(unroll.expr))
+  if (auto integer = std::dynamic_pointer_cast<Integer>(unroll.expr))
   {
     unroll.var = integer->n;
   }
-  else if (auto *param = dynamic_cast<PositionalParameter *>(unroll.expr))
+  else if (auto param = std::dynamic_pointer_cast<PositionalParameter>(unroll.expr))
   {
     if (param->ptype == PositionalParameterType::count)
     {
@@ -1807,7 +1807,7 @@ void SemanticAnalyser::visit(FieldAccess &acc)
 
   if (type.is_tparg)
   {
-    for (AttachPoint *attach_point : *probe_->attach_points)
+    for (std::shared_ptr<AttachPoint> attach_point : *probe_->attach_points)
     {
       if (probetype(attach_point->provider) != ProbeType::tracepoint)
       {
@@ -1923,7 +1923,7 @@ void SemanticAnalyser::visit(Tuple &tuple)
   std::vector<SizedType> elements;
   for (size_t i = 0; i < tuple.elems->size(); ++i)
   {
-    Expression *elem = tuple.elems->at(i);
+    std::shared_ptr<Expression> elem = tuple.elems->at(i);
     elem->accept(*this);
 
     elements.emplace_back(elem->type);
@@ -2045,7 +2045,7 @@ void SemanticAnalyser::visit(AssignVarStatement &assignment)
   auto search = variable_val_.find(var_ident);
   assignment.var->type = assignment.expr->type;
 
-  auto *builtin = dynamic_cast<Builtin *>(assignment.expr);
+  auto builtin = std::dynamic_pointer_cast<Builtin>(assignment.expr);
   if (builtin && builtin->ident == "args" && builtin->type.is_kfarg)
   {
     LOG(ERROR, assignment.loc, err_) << "args cannot be assigned to a variable";
@@ -2401,13 +2401,13 @@ void SemanticAnalyser::visit(Probe &probe)
   variable_val_.clear();
   probe_ = &probe;
 
-  for (AttachPoint *ap : *probe.attach_points) {
+  for (std::shared_ptr<AttachPoint> ap : *probe.attach_points) {
     ap->accept(*this);
   }
   if (probe.pred) {
     probe.pred->accept(*this);
   }
-  for (Statement *stmt : *probe.stmts) {
+  for (std::shared_ptr<Statement> stmt : *probe.stmts) {
     stmt->accept(*this);
   }
 
@@ -2415,7 +2415,7 @@ void SemanticAnalyser::visit(Probe &probe)
 
 void SemanticAnalyser::visit(Program &program)
 {
-  for (Probe *probe : *program.probes)
+  for (std::shared_ptr<Probe> probe : *program.probes)
     probe->accept(*this);
 }
 
@@ -2787,7 +2787,7 @@ void SemanticAnalyser::assign_map_type(const Map &map, const SizedType &type)
   }
 }
 
-void SemanticAnalyser::accept_statements(StatementList *stmts)
+void SemanticAnalyser::accept_statements(std::shared_ptr<StatementList> stmts)
 {
   for (size_t i = 0; i < stmts->size(); i++)
   {
@@ -2796,7 +2796,7 @@ void SemanticAnalyser::accept_statements(StatementList *stmts)
 
     if (is_final_pass())
     {
-      auto *jump = dynamic_cast<Jump *>(stmt);
+      auto jump = std::dynamic_pointer_cast<Jump>(stmt);
       if (jump && i < (stmts->size() - 1))
       {
         LOG(WARNING, jump->loc, out_)

@@ -13,7 +13,7 @@
 namespace bpftrace {
 namespace ast {
 
-AttachPointParser::AttachPointParser(Program *root,
+AttachPointParser::AttachPointParser(std::shared_ptr<Program> root,
                                      BPFtrace &bpftrace,
                                      std::ostream &sink)
     : root_(root), bpftrace_(bpftrace), sink_(sink)
@@ -26,9 +26,9 @@ int AttachPointParser::parse()
     return 1;
 
   uint32_t failed = 0;
-  for (Probe *probe : *(root_->probes))
+  for (std::shared_ptr<Probe> probe : *(root_->probes))
   {
-    for (AttachPoint *ap : *(probe->attach_points))
+    for (std::shared_ptr<AttachPoint> ap : *(probe->attach_points))
     {
       if (parse_attachpoint(*ap))
       {

@@ -31,13 +31,13 @@ public:
   Expression(location loc);
   SizedType type;
   Map *key_for_map = nullptr;
-  Map *map = nullptr; // Only set when this expression is assigned to a map
-  Variable *var = nullptr; // Set when this expression is assigned to a variable
+  std::shared_ptr<Map> map = nullptr; // Only set when this expression is assigned to a map
+  std::shared_ptr<Variable> var = nullptr; // Set when this expression is assigned to a variable
   bool is_literal = false;
   bool is_variable = false;
   bool is_map = false;
 };
-using ExpressionList = std::vector<Expression *>;
+using ExpressionList = std::vector<std::shared_ptr<Expression> >;
 
 class Integer : public Expression {
 public:
@@ -102,10 +102,10 @@ class Call : public Expression {
 public:
   explicit Call(const std::string &func);
   explicit Call(const std::string &func, location loc);
-  Call(const std::string &func, ExpressionList *vargs);
-  Call(const std::string &func, ExpressionList *vargs, location loc);
+  Call(const std::string &func, std::shared_ptr<ExpressionList> vargs);
+  Call(const std::string &func, std::shared_ptr<ExpressionList> vargs, location loc);
   std::string func;
-  ExpressionList *vargs;
+  std::shared_ptr<ExpressionList> vargs;
 
   void accept(Visitor &v) override;
 };
@@ -113,10 +113,10 @@ public:
 class Map : public Expression {
 public:
   explicit Map(const std::string &ident, location loc);
-  Map(const std::string &ident, ExpressionList *vargs);
-  Map(const std::string &ident, ExpressionList *vargs, location loc);
+  Map(const std::string &ident, std::shared_ptr<ExpressionList> vargs);
+  Map(const std::string &ident, std::shared_ptr<ExpressionList> vargs, location loc);
   std::string ident;
-  ExpressionList *vargs;
+  std::shared_ptr<ExpressionList> vargs;
   bool skip_key_validation = false;
 
   void accept(Visitor &v) override;
@@ -133,8 +133,8 @@ public:
 
 class Binop : public Expression {
 public:
-  Binop(Expression *left, int op, Expression *right, location loc);
-  Expression *left, *right;
+  Binop(std::shared_ptr<Expression> left, int op, std::shared_ptr<Expression> right, location loc);
+  std::shared_ptr<Expression> left, right;
   int op;
 
   void accept(Visitor &v) override;
@@ -142,12 +142,12 @@ public:
 
 class Unop : public Expression {
 public:
-  Unop(int op, Expression *expr, location loc = location());
+  Unop(int op, std::shared_ptr<Expression> expr, location loc = location());
   Unop(int op,
-       Expression *expr,
+       std::shared_ptr<Expression> expr,
        bool is_post_op = false,
        location loc = location());
-  Expression *expr;
+  std::shared_ptr<Expression> expr;
   int op;
   bool is_post_op;
 
@@ -156,10 +156,10 @@ public:
 
 class FieldAccess : public Expression {
 public:
-  FieldAccess(Expression *expr, const std::string &field);
-  FieldAccess(Expression *expr, const std::string &field, location loc);
-  FieldAccess(Expression *expr, ssize_t index, location loc);
-  Expression *expr;
+  FieldAccess(std::shared_ptr<Expression> expr, const std::string &field);
+  FieldAccess(std::shared_ptr<Expression> expr, const std::string &field, location loc);
+  FieldAccess(std::shared_ptr<Expression> expr, ssize_t index, location loc);
+  std::shared_ptr<Expression> expr;
   std::string field;
   ssize_t index = -1;
 
@@ -168,24 +168,24 @@ public:
 
 class ArrayAccess : public Expression {
 public:
-  ArrayAccess(Expression *expr, Expression *indexpr);
-  ArrayAccess(Expression *expr, Expression *indexpr, location loc);
-  Expression *expr;
-  Expression *indexpr;
+  ArrayAccess(std::shared_ptr<Expression> expr, std::shared_ptr<Expression> indexpr);
+  ArrayAccess(std::shared_ptr<Expression> expr, std::shared_ptr<Expression> indexpr, location loc);
+  std::shared_ptr<Expression> expr;
+  std::shared_ptr<Expression> indexpr;
 
   void accept(Visitor &v) override;
 };
 
 class Cast : public Expression {
 public:
-  Cast(const std::string &type, bool is_pointer, Expression *expr);
+  Cast(const std::string &type, bool is_pointer, std::shared_ptr<Expression> expr);
   Cast(const std::string &type,
        bool is_pointer,
-       Expression *expr,
+       std::shared_ptr<Expression> expr,
        location loc);
   std::string cast_type;
   bool is_pointer;
-  Expression *expr;
+  std::shared_ptr<Expression> expr;
 
   void accept(Visitor &v) override;
 };
@@ -193,8 +193,8 @@ public:
 class Tuple : public Expression
 {
 public:
-  Tuple(ExpressionList *elems, location loc);
-  ExpressionList *elems;
+  Tuple(std::shared_ptr<ExpressionList> elems, location loc);
+  std::shared_ptr<ExpressionList> elems;
 
   void accept(Visitor &v) override;
 };
@@ -204,53 +204,53 @@ public:
   Statement() = default;
   Statement(location loc);
 };
-using StatementList = std::vector<Statement *>;
+using StatementList = std::vector<std::shared_ptr<Statement> >;
 
 class ExprStatement : public Statement {
 public:
-  explicit ExprStatement(Expression *expr);
-  explicit ExprStatement(Expression *expr, location loc);
-  Expression *expr;
+  explicit ExprStatement(std::shared_ptr<Expression> expr);
+  explicit ExprStatement(std::shared_ptr<Expression> expr, location loc);
+  std::shared_ptr<Expression> expr;
 
   void accept(Visitor &v) override;
 };
 
 class AssignMapStatement : public Statement {
 public:
-  AssignMapStatement(Map *map, Expression *expr, location loc = location());
-  Map *map;
-  Expression *expr;
+  AssignMapStatement(std::shared_ptr<Map> map, std::shared_ptr<Expression> expr, location loc = location());
+  std::shared_ptr<Map> map;
+  std::shared_ptr<Expression> expr;
 
   void accept(Visitor &v) override;
 };
 
 class AssignVarStatement : public Statement {
 public:
-  AssignVarStatement(Variable *var, Expression *expr);
-  AssignVarStatement(Variable *var, Expression *expr, location loc);
-  Variable *var;
-  Expression *expr;
+  AssignVarStatement(std::shared_ptr<Variable> var, std::shared_ptr<Expression> expr);
+  AssignVarStatement(std::shared_ptr<Variable> var, std::shared_ptr<Expression> expr, location loc);
+  std::shared_ptr<Variable> var;
+  std::shared_ptr<Expression> expr;
 
   void accept(Visitor &v) override;
 };
 
 class If : public Statement {
 public:
-  If(Expression *cond, StatementList *stmts);
-  If(Expression *cond, StatementList *stmts, StatementList *else_stmts);
-  Expression *cond;
-  StatementList *stmts = nullptr;
-  StatementList *else_stmts = nullptr;
+  If(std::shared_ptr<Expression> cond, std::shared_ptr<StatementList> stmts);
+  If(std::shared_ptr<Expression> cond, std::shared_ptr<StatementList> stmts, std::shared_ptr<StatementList> else_stmts);
+  std::shared_ptr<Expression> cond;
+  std::shared_ptr<StatementList> stmts = nullptr;
+  std::shared_ptr<StatementList> else_stmts = nullptr;
 
   void accept(Visitor &v) override;
 };
 
 class Unroll : public Statement {
 public:
-  Unroll(Expression *expr, StatementList *stmts, location loc);
+  Unroll(std::shared_ptr<Expression> expr, std::shared_ptr<StatementList> stmts, location loc);
   long int var = 0;
-  Expression *expr;
-  StatementList *stmts;
+  std::shared_ptr<Expression> expr;
+  std::shared_ptr<StatementList> stmts;
 
   void accept(Visitor &v) override;
 };
@@ -270,18 +270,18 @@ public:
 
 class Predicate : public Node {
 public:
-  explicit Predicate(Expression *expr);
-  explicit Predicate(Expression *expr, location loc);
-  Expression *expr;
+  explicit Predicate(std::shared_ptr<Expression> expr);
+  explicit Predicate(std::shared_ptr<Expression> expr, location loc);
+  std::shared_ptr<Expression> expr;
 
   void accept(Visitor &v) override;
 };
 
 class Ternary : public Expression {
 public:
-  Ternary(Expression *cond, Expression *left, Expression *right);
-  Ternary(Expression *cond, Expression *left, Expression *right, location loc);
-  Expression *cond, *left, *right;
+  Ternary(std::shared_ptr<Expression> cond, std::shared_ptr<Expression> left, std::shared_ptr<Expression> right);
+  Ternary(std::shared_ptr<Expression> cond, std::shared_ptr<Expression> left, std::shared_ptr<Expression> right, location loc);
+  std::shared_ptr<Expression> cond, left, right;
 
   void accept(Visitor &v) override;
 };
@@ -289,12 +289,12 @@ public:
 class While : public Statement
 {
 public:
-  While(Expression *cond, StatementList *stmts, location loc)
+  While(std::shared_ptr<Expression> cond, std::shared_ptr<StatementList> stmts, location loc)
       : cond(cond), stmts(stmts), loc(loc)
   {
   }
-  Expression *cond;
-  StatementList *stmts = nullptr;
+  std::shared_ptr<Expression> cond;
+  std::shared_ptr<StatementList> stmts = nullptr;
   location loc;
 
   void accept(Visitor &v) override;
@@ -329,15 +329,15 @@ public:
 private:
   std::map<std::string, int> index_;
 };
-using AttachPointList = std::vector<AttachPoint *>;
+using AttachPointList = std::vector<std::shared_ptr<AttachPoint>>;
 
 class Probe : public Node {
 public:
-  Probe(AttachPointList *attach_points, Predicate *pred, StatementList *stmts);
+  Probe(std::shared_ptr<AttachPointList> attach_points, std::shared_ptr<Predicate> pred, std::shared_ptr<StatementList> stmts);
 
-  AttachPointList *attach_points;
-  Predicate *pred;
-  StatementList *stmts;
+  std::shared_ptr<AttachPointList> attach_points;
+  std::shared_ptr<Predicate> pred;
+  std::shared_ptr<StatementList> stmts;
 
   void accept(Visitor &v) override;
   std::string name() const;
@@ -349,13 +349,13 @@ public:
 private:
   int index_ = 0;
 };
-using ProbeList = std::vector<Probe *>;
+using ProbeList = std::vector<std::shared_ptr<Probe>>;
 
 class Program : public Node {
 public:
-  Program(const std::string &c_definitions, ProbeList *probes);
+  Program(const std::string &c_definitions, std::shared_ptr<ProbeList> probes);
   std::string c_definitions;
-  ProbeList *probes;
+  std::shared_ptr<ProbeList> probes;
 
   void accept(Visitor &v) override;
 };
