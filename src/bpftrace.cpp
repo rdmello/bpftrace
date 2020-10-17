@@ -2188,8 +2188,9 @@ std::string BPFtrace::get_string_literal(const ast::Expression *expr) const
       // Positional parameters in the form str($1) can be used as literals
       if (str_call->func == "str")
       {
-        if (auto pos_param = std::dynamic_pointer_cast<const ast::PositionalParameter>(
-                str_call->vargs->at(0)))
+        if (auto pos_param =
+                std::dynamic_pointer_cast<const ast::PositionalParameter>(
+                    str_call->vargs->at(0)))
           return get_param(pos_param->n, true);
       }
     }
@@ -2199,7 +2200,9 @@ std::string BPFtrace::get_string_literal(const ast::Expression *expr) const
   return "";
 }
 
-std::string BPFtrace::get_string_literal(const std::shared_ptr<ast::Expression> expr) const {
+std::string BPFtrace::get_string_literal(
+    const std::shared_ptr<ast::Expression> expr) const
+{
   // Just calls the raw pointer overload.
   // TODO: Can the raw pointer overload just be removed instead?
   return this->get_string_literal(expr.get());

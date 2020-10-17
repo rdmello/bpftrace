@@ -31,13 +31,15 @@ public:
   Expression(location loc);
   SizedType type;
   Map *key_for_map = nullptr;
-  std::shared_ptr<Map> map = nullptr; // Only set when this expression is assigned to a map
-  std::shared_ptr<Variable> var = nullptr; // Set when this expression is assigned to a variable
+  std::shared_ptr<Map> map = nullptr;      // Only set when this expression is
+                                           // assigned to a map
+  std::shared_ptr<Variable> var = nullptr; // Set when this expression is
+                                           // assigned to a variable
   bool is_literal = false;
   bool is_variable = false;
   bool is_map = false;
 };
-using ExpressionList = std::vector<std::shared_ptr<Expression> >;
+using ExpressionList = std::vector<std::shared_ptr<Expression>>;
 
 class Integer : public Expression {
 public:
@@ -103,7 +105,9 @@ public:
   explicit Call(const std::string &func);
   explicit Call(const std::string &func, location loc);
   Call(const std::string &func, std::shared_ptr<ExpressionList> vargs);
-  Call(const std::string &func, std::shared_ptr<ExpressionList> vargs, location loc);
+  Call(const std::string &func,
+       std::shared_ptr<ExpressionList> vargs,
+       location loc);
   std::string func;
   std::shared_ptr<ExpressionList> vargs;
 
@@ -114,7 +118,9 @@ class Map : public Expression {
 public:
   explicit Map(const std::string &ident, location loc);
   Map(const std::string &ident, std::shared_ptr<ExpressionList> vargs);
-  Map(const std::string &ident, std::shared_ptr<ExpressionList> vargs, location loc);
+  Map(const std::string &ident,
+      std::shared_ptr<ExpressionList> vargs,
+      location loc);
   std::string ident;
   std::shared_ptr<ExpressionList> vargs;
   bool skip_key_validation = false;
@@ -133,7 +139,10 @@ public:
 
 class Binop : public Expression {
 public:
-  Binop(std::shared_ptr<Expression> left, int op, std::shared_ptr<Expression> right, location loc);
+  Binop(std::shared_ptr<Expression> left,
+        int op,
+        std::shared_ptr<Expression> right,
+        location loc);
   std::shared_ptr<Expression> left, right;
   int op;
 
@@ -157,7 +166,9 @@ public:
 class FieldAccess : public Expression {
 public:
   FieldAccess(std::shared_ptr<Expression> expr, const std::string &field);
-  FieldAccess(std::shared_ptr<Expression> expr, const std::string &field, location loc);
+  FieldAccess(std::shared_ptr<Expression> expr,
+              const std::string &field,
+              location loc);
   FieldAccess(std::shared_ptr<Expression> expr, ssize_t index, location loc);
   std::shared_ptr<Expression> expr;
   std::string field;
@@ -168,8 +179,11 @@ public:
 
 class ArrayAccess : public Expression {
 public:
-  ArrayAccess(std::shared_ptr<Expression> expr, std::shared_ptr<Expression> indexpr);
-  ArrayAccess(std::shared_ptr<Expression> expr, std::shared_ptr<Expression> indexpr, location loc);
+  ArrayAccess(std::shared_ptr<Expression> expr,
+              std::shared_ptr<Expression> indexpr);
+  ArrayAccess(std::shared_ptr<Expression> expr,
+              std::shared_ptr<Expression> indexpr,
+              location loc);
   std::shared_ptr<Expression> expr;
   std::shared_ptr<Expression> indexpr;
 
@@ -178,7 +192,9 @@ public:
 
 class Cast : public Expression {
 public:
-  Cast(const std::string &type, bool is_pointer, std::shared_ptr<Expression> expr);
+  Cast(const std::string &type,
+       bool is_pointer,
+       std::shared_ptr<Expression> expr);
   Cast(const std::string &type,
        bool is_pointer,
        std::shared_ptr<Expression> expr,
@@ -204,7 +220,7 @@ public:
   Statement() = default;
   Statement(location loc);
 };
-using StatementList = std::vector<std::shared_ptr<Statement> >;
+using StatementList = std::vector<std::shared_ptr<Statement>>;
 
 class ExprStatement : public Statement {
 public:
@@ -217,7 +233,9 @@ public:
 
 class AssignMapStatement : public Statement {
 public:
-  AssignMapStatement(std::shared_ptr<Map> map, std::shared_ptr<Expression> expr, location loc = location());
+  AssignMapStatement(std::shared_ptr<Map> map,
+                     std::shared_ptr<Expression> expr,
+                     location loc = location());
   std::shared_ptr<Map> map;
   std::shared_ptr<Expression> expr;
 
@@ -226,8 +244,11 @@ public:
 
 class AssignVarStatement : public Statement {
 public:
-  AssignVarStatement(std::shared_ptr<Variable> var, std::shared_ptr<Expression> expr);
-  AssignVarStatement(std::shared_ptr<Variable> var, std::shared_ptr<Expression> expr, location loc);
+  AssignVarStatement(std::shared_ptr<Variable> var,
+                     std::shared_ptr<Expression> expr);
+  AssignVarStatement(std::shared_ptr<Variable> var,
+                     std::shared_ptr<Expression> expr,
+                     location loc);
   std::shared_ptr<Variable> var;
   std::shared_ptr<Expression> expr;
 
@@ -237,7 +258,9 @@ public:
 class If : public Statement {
 public:
   If(std::shared_ptr<Expression> cond, std::shared_ptr<StatementList> stmts);
-  If(std::shared_ptr<Expression> cond, std::shared_ptr<StatementList> stmts, std::shared_ptr<StatementList> else_stmts);
+  If(std::shared_ptr<Expression> cond,
+     std::shared_ptr<StatementList> stmts,
+     std::shared_ptr<StatementList> else_stmts);
   std::shared_ptr<Expression> cond;
   std::shared_ptr<StatementList> stmts = nullptr;
   std::shared_ptr<StatementList> else_stmts = nullptr;
@@ -247,7 +270,9 @@ public:
 
 class Unroll : public Statement {
 public:
-  Unroll(std::shared_ptr<Expression> expr, std::shared_ptr<StatementList> stmts, location loc);
+  Unroll(std::shared_ptr<Expression> expr,
+         std::shared_ptr<StatementList> stmts,
+         location loc);
   long int var = 0;
   std::shared_ptr<Expression> expr;
   std::shared_ptr<StatementList> stmts;
@@ -279,8 +304,13 @@ public:
 
 class Ternary : public Expression {
 public:
-  Ternary(std::shared_ptr<Expression> cond, std::shared_ptr<Expression> left, std::shared_ptr<Expression> right);
-  Ternary(std::shared_ptr<Expression> cond, std::shared_ptr<Expression> left, std::shared_ptr<Expression> right, location loc);
+  Ternary(std::shared_ptr<Expression> cond,
+          std::shared_ptr<Expression> left,
+          std::shared_ptr<Expression> right);
+  Ternary(std::shared_ptr<Expression> cond,
+          std::shared_ptr<Expression> left,
+          std::shared_ptr<Expression> right,
+          location loc);
   std::shared_ptr<Expression> cond, left, right;
 
   void accept(Visitor &v) override;
@@ -289,7 +319,9 @@ public:
 class While : public Statement
 {
 public:
-  While(std::shared_ptr<Expression> cond, std::shared_ptr<StatementList> stmts, location loc)
+  While(std::shared_ptr<Expression> cond,
+        std::shared_ptr<StatementList> stmts,
+        location loc)
       : cond(cond), stmts(stmts), loc(loc)
   {
   }
@@ -333,7 +365,9 @@ using AttachPointList = std::vector<std::shared_ptr<AttachPoint>>;
 
 class Probe : public Node {
 public:
-  Probe(std::shared_ptr<AttachPointList> attach_points, std::shared_ptr<Predicate> pred, std::shared_ptr<StatementList> stmts);
+  Probe(std::shared_ptr<AttachPointList> attach_points,
+        std::shared_ptr<Predicate> pred,
+        std::shared_ptr<StatementList> stmts);
 
   std::shared_ptr<AttachPointList> attach_points;
   std::shared_ptr<Predicate> pred;

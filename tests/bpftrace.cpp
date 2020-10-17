@@ -118,9 +118,12 @@ void check_special_probe(Probe &p, const std::string &attach_point, const std::s
 
 namespace {
 /* Convenience function to help generate attach point lists for testing */
-template <typename ...Args>
-std::shared_ptr<ast::AttachPointList> make_attach_point_list(Args... args) {
-  const std::vector<std::shared_ptr<ast::AttachPoint>> list = {std::make_shared<ast::AttachPoint>(args)...};
+template <typename... Args>
+std::shared_ptr<ast::AttachPointList> make_attach_point_list(Args... args)
+{
+  const std::vector<std::shared_ptr<ast::AttachPoint>> list = {
+    std::make_shared<ast::AttachPoint>(args)...
+  };
   return std::make_shared<ast::AttachPointList>(list);
 }
 } // Anonymous namespace
@@ -129,7 +132,7 @@ TEST(bpftrace, add_begin_probe)
 {
   ast::AttachPoint a("");
   a.provider = "BEGIN";
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   StrictMock<MockBPFtrace> bpftrace;
@@ -144,7 +147,7 @@ TEST(bpftrace, add_end_probe)
 {
   ast::AttachPoint a("");
   a.provider = "END";
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   StrictMock<MockBPFtrace> bpftrace;
@@ -160,7 +163,7 @@ TEST(bpftrace, add_probes_single)
   ast::AttachPoint a("");
   a.provider = "kprobe";
   a.func = "sys_read";
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   StrictMock<MockBPFtrace> bpftrace;
@@ -179,7 +182,7 @@ TEST(bpftrace, add_probes_multiple)
   ast::AttachPoint a2("");
   a2.provider = "kprobe";
   a2.func = "sys_write";
-  auto attach_points = make_attach_point_list( a1, a2 );
+  auto attach_points = make_attach_point_list(a1, a2);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   StrictMock<MockBPFtrace> bpftrace;
@@ -204,7 +207,7 @@ TEST(bpftrace, add_probes_wildcard)
   ast::AttachPoint a3("");
   a3.provider = "kprobe";
   a3.func = "sys_write";
-  auto attach_points = make_attach_point_list( a1, a2, a3 );
+  auto attach_points = make_attach_point_list(a1, a2, a3);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   auto bpftrace = get_strict_mock_bpftrace();
@@ -236,7 +239,7 @@ TEST(bpftrace, add_probes_wildcard_no_matches)
   ast::AttachPoint a3("");
   a3.provider = "kprobe";
   a3.func = "sys_write";
-  auto attach_points = make_attach_point_list( a1, a2, a3 );
+  auto attach_points = make_attach_point_list(a1, a2, a3);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   auto bpftrace = get_strict_mock_bpftrace();
@@ -259,7 +262,7 @@ TEST(bpftrace, add_probes_kernel_module)
   ast::AttachPoint a1("");
   a1.provider = "kprobe";
   a1.func = "func_in_mod";
-  auto attach_points = make_attach_point_list( a1 );
+  auto attach_points = make_attach_point_list(a1);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   auto bpftrace = get_strict_mock_bpftrace();
@@ -277,7 +280,7 @@ TEST(bpftrace, add_probes_kernel_module_wildcard)
   a1.provider = "kprobe";
   a1.func = "func_in_mo*";
   a1.need_expansion = true;
-  auto attach_points = make_attach_point_list( a1 );
+  auto attach_points = make_attach_point_list(a1);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   auto bpftrace = get_strict_mock_bpftrace();
@@ -301,7 +304,7 @@ TEST(bpftrace, add_probes_offset)
   a.provider = "kprobe";
   a.func = "sys_read";
   a.func_offset = offset;
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   StrictMock<MockBPFtrace> bpftrace;
@@ -320,7 +323,7 @@ TEST(bpftrace, add_probes_uprobe)
   a.provider = "uprobe";
   a.target = "/bin/sh";
   a.func = "foo";
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   StrictMock<MockBPFtrace> bpftrace;
@@ -338,7 +341,7 @@ TEST(bpftrace, add_probes_uprobe_wildcard)
   a.target = "/bin/sh";
   a.func = "*open";
   a.need_expansion = true;
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   auto bpftrace = get_strict_mock_bpftrace();
@@ -360,7 +363,7 @@ TEST(bpftrace, add_probes_uprobe_wildcard_file)
   a.target = "/bin/*sh";
   a.func = "first_open";
   a.need_expansion = true;
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   auto bpftrace = get_strict_mock_bpftrace();
@@ -384,7 +387,7 @@ TEST(bpftrace, add_probes_uprobe_wildcard_no_matches)
   a.target = "/bin/sh";
   a.func = "foo*";
   a.need_expansion = true;
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   auto bpftrace = get_strict_mock_bpftrace();
@@ -401,7 +404,7 @@ TEST(bpftrace, add_probes_uprobe_string_literal)
   a.provider = "uprobe";
   a.target = "/bin/sh";
   a.func = "foo*";
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   StrictMock<MockBPFtrace> bpftrace;
@@ -418,7 +421,7 @@ TEST(bpftrace, add_probes_uprobe_address)
   a.provider = "uprobe";
   a.target = "/bin/sh";
   a.address = 1024;
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   StrictMock<MockBPFtrace> bpftrace;
@@ -436,7 +439,7 @@ TEST(bpftrace, add_probes_uprobe_string_offset)
   a.target = "/bin/sh";
   a.func = "foo";
   a.func_offset = 10;
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   StrictMock<MockBPFtrace> bpftrace;
@@ -456,7 +459,7 @@ TEST(bpftrace, add_probes_uprobe_cpp_symbol)
     a.target = "/bin/sh";
     a.func = "cpp_mangled";
     a.need_expansion = true;
-    auto attach_points = make_attach_point_list( a );
+    auto attach_points = make_attach_point_list(a);
     ast::Probe probe(attach_points, nullptr, nullptr);
 
     auto bpftrace = get_strict_mock_bpftrace();
@@ -480,7 +483,7 @@ TEST(bpftrace, add_probes_uprobe_cpp_symbol_full)
   a.target = "/bin/sh";
   a.func = "cpp_mangled(int)";
   a.need_expansion = true;
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   auto bpftrace = get_strict_mock_bpftrace();
@@ -502,7 +505,7 @@ TEST(bpftrace, add_probes_uprobe_cpp_symbol_wildcard)
   a.target = "/bin/sh";
   a.func = "cpp_man*";
   a.need_expansion = true;
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   auto bpftrace = get_strict_mock_bpftrace();
@@ -529,7 +532,7 @@ TEST(bpftrace, add_probes_usdt)
   a.ns = "prov1";
   a.func = "mytp";
   a.usdt.num_locations = 1;
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   StrictMock<MockBPFtrace> bpftrace;
@@ -551,7 +554,7 @@ TEST(bpftrace, add_probes_usdt_wildcard)
   a.func = "tp*";
   a.usdt.num_locations = 1;
   a.need_expansion = true;
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   auto bpftrace = get_strict_mock_bpftrace();
@@ -591,7 +594,7 @@ TEST(bpftrace, add_probes_usdt_empty_namespace)
   a.func = "tp1";
   a.usdt.num_locations = 1;
   a.need_expansion = true;
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   auto bpftrace = get_strict_mock_bpftrace();
@@ -616,7 +619,7 @@ TEST(bpftrace, add_probes_usdt_empty_namespace_conflict)
   a.func = "tp";
   a.usdt.num_locations = 1;
   a.need_expansion = true;
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   auto bpftrace = get_strict_mock_bpftrace();
@@ -633,7 +636,7 @@ TEST(bpftrace, add_probes_usdt_duplicate_markers)
   a.ns = "prov1";
   a.func = "mytp";
   a.usdt.num_locations = 3;
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   StrictMock<MockBPFtrace> bpftrace;
@@ -664,7 +667,7 @@ TEST(bpftrace, add_probes_tracepoint)
   a.provider = "tracepoint";
   a.target = "sched";
   a.func = "sched_switch";
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   StrictMock<MockBPFtrace> bpftrace;
@@ -684,7 +687,7 @@ TEST(bpftrace, add_probes_tracepoint_wildcard)
   a.target = "sched";
   a.func = "sched_*";
   a.need_expansion = true;
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   auto bpftrace = get_strict_mock_bpftrace();
@@ -709,7 +712,7 @@ TEST(bpftrace, add_probes_tracepoint_category_wildcard)
   a.target = "sched*";
   a.func = "sched_*";
   a.need_expansion = true;
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   auto bpftrace = get_strict_mock_bpftrace();
@@ -740,7 +743,7 @@ TEST(bpftrace, add_probes_tracepoint_wildcard_no_matches)
   a.target = "typo";
   a.func = "typo_*";
   a.need_expansion = true;
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   auto bpftrace = get_strict_mock_bpftrace();
@@ -759,7 +762,7 @@ TEST(bpftrace, add_probes_profile)
   a.provider = "profile";
   a.target = "ms";
   a.freq = 997;
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   StrictMock<MockBPFtrace> bpftrace;
@@ -778,7 +781,7 @@ TEST(bpftrace, add_probes_interval)
   a.provider = "interval";
   a.target = "s";
   a.freq = 1;
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   StrictMock<MockBPFtrace> bpftrace;
@@ -797,7 +800,7 @@ TEST(bpftrace, add_probes_software)
   a.provider = "software";
   a.target = "faults";
   a.freq = 1000;
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   StrictMock<MockBPFtrace> bpftrace;
@@ -816,7 +819,7 @@ TEST(bpftrace, add_probes_hardware)
   a.provider = "hardware";
   a.target = "cache-references";
   a.freq = 1000000;
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   StrictMock<MockBPFtrace> bpftrace;
@@ -834,7 +837,7 @@ TEST(bpftrace, invalid_provider)
   ast::AttachPoint a("");
   a.provider = "lookatme";
   a.func = "invalid";
-  auto attach_points = make_attach_point_list( a );
+  auto attach_points = make_attach_point_list(a);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   StrictMock<MockBPFtrace> bpftrace;
@@ -1068,7 +1071,7 @@ TEST_F(bpftrace_btf, add_probes_kfunc)
   ast::AttachPoint b("");
   b.provider = "kretfunc";
   b.target = "func_1";
-  auto attach_points = make_attach_point_list( a, b );
+  auto attach_points = make_attach_point_list(a, b);
   ast::Probe probe(attach_points, nullptr, nullptr);
 
   StrictMock<MockBPFtrace> bpftrace;

@@ -866,7 +866,8 @@ TEST(semantic_analyser, variable_type)
   Driver driver(bpftrace);
   test(driver, "kprobe:f { $x = 1 }", 0);
   auto st = CreateInt64();
-  auto assignment = std::static_pointer_cast<ast::AssignVarStatement>(driver.root_->probes->at(0)->stmts->at(0));
+  auto assignment = std::static_pointer_cast<ast::AssignVarStatement>(
+      driver.root_->probes->at(0)->stmts->at(0));
   EXPECT_EQ(st, assignment->var->type);
 }
 
@@ -895,8 +896,10 @@ TEST(semantic_analyser, map_integer_sizes)
   std::string structs = "struct type1 { int x; }";
   test(driver, structs + "kprobe:f { $x = ((struct type1)0).x; @x = $x; }", 0);
 
-  auto var_assignment = std::static_pointer_cast<ast::AssignVarStatement>(driver.root_->probes->at(0)->stmts->at(0));
-  auto map_assignment = std::static_pointer_cast<ast::AssignMapStatement>(driver.root_->probes->at(0)->stmts->at(1));
+  auto var_assignment = std::static_pointer_cast<ast::AssignVarStatement>(
+      driver.root_->probes->at(0)->stmts->at(0));
+  auto map_assignment = std::static_pointer_cast<ast::AssignMapStatement>(
+      driver.root_->probes->at(0)->stmts->at(1));
   EXPECT_EQ(CreateInt32(), var_assignment->var->type);
   EXPECT_EQ(CreateInt64(), map_assignment->map->type);
 }
@@ -1275,7 +1278,8 @@ TEST(semantic_analyser, field_access_is_internal)
   {
     test(driver, structs + "kprobe:f { $x = ((struct type1)0).x }", 0);
     auto stmts = driver.root_->probes->at(0)->stmts;
-    auto var_assignment1 = std::static_pointer_cast<ast::AssignVarStatement >(stmts->at(0));
+    auto var_assignment1 = std::static_pointer_cast<ast::AssignVarStatement>(
+        stmts->at(0));
     EXPECT_FALSE(var_assignment1->var->type.is_internal);
   }
 
@@ -1284,8 +1288,10 @@ TEST(semantic_analyser, field_access_is_internal)
          structs + "kprobe:f { @type1 = (struct type1)0; $x = @type1.x }",
          0);
     auto stmts = driver.root_->probes->at(0)->stmts;
-    auto map_assignment = std::static_pointer_cast<ast::AssignMapStatement >(stmts->at(0));
-    auto var_assignment2 = std::static_pointer_cast<ast::AssignVarStatement >(stmts->at(1));
+    auto map_assignment = std::static_pointer_cast<ast::AssignMapStatement>(
+        stmts->at(0));
+    auto var_assignment2 = std::static_pointer_cast<ast::AssignVarStatement>(
+        stmts->at(1));
     EXPECT_TRUE(map_assignment->map->type.is_internal);
     EXPECT_TRUE(var_assignment2->var->type.is_internal);
   }
@@ -1448,10 +1454,14 @@ TEST(semantic_analyser, cast_sign)
     "  $s = $t->s; $us = $t->us; $l = $t->l; $lu = $t->ul; }";
   test(driver, prog, 0);
 
-  auto s  = std::static_pointer_cast<ast::AssignVarStatement>(driver.root_->probes->at(0)->stmts->at(1));
-  auto us = std::static_pointer_cast<ast::AssignVarStatement>(driver.root_->probes->at(0)->stmts->at(2));
-  auto l  = std::static_pointer_cast<ast::AssignVarStatement>(driver.root_->probes->at(0)->stmts->at(3));
-  auto ul = std::static_pointer_cast<ast::AssignVarStatement>(driver.root_->probes->at(0)->stmts->at(4));
+  auto s = std::static_pointer_cast<ast::AssignVarStatement>(
+      driver.root_->probes->at(0)->stmts->at(1));
+  auto us = std::static_pointer_cast<ast::AssignVarStatement>(
+      driver.root_->probes->at(0)->stmts->at(2));
+  auto l = std::static_pointer_cast<ast::AssignVarStatement>(
+      driver.root_->probes->at(0)->stmts->at(3));
+  auto ul = std::static_pointer_cast<ast::AssignVarStatement>(
+      driver.root_->probes->at(0)->stmts->at(4));
   EXPECT_EQ(CreateInt32(), s->var->type);
   EXPECT_EQ(CreateUInt32(), us->var->type);
   EXPECT_EQ(CreateInt64(), l->var->type);
@@ -1478,11 +1488,14 @@ TEST(semantic_analyser, binop_sign)
       "}";
 
     test(driver, prog, 0);
-    auto varA = std::static_pointer_cast<ast::AssignVarStatement>(driver.root_->probes->at(0)->stmts->at(1));
+    auto varA = std::static_pointer_cast<ast::AssignVarStatement>(
+        driver.root_->probes->at(0)->stmts->at(1));
     EXPECT_EQ(CreateInt64(), varA->var->type);
-    auto varB = std::static_pointer_cast<ast::AssignVarStatement>(driver.root_->probes->at(0)->stmts->at(2));
+    auto varB = std::static_pointer_cast<ast::AssignVarStatement>(
+        driver.root_->probes->at(0)->stmts->at(2));
     EXPECT_EQ(CreateUInt64(), varB->var->type);
-    auto varC = std::static_pointer_cast<ast::AssignVarStatement>(driver.root_->probes->at(0)->stmts->at(3));
+    auto varC = std::static_pointer_cast<ast::AssignVarStatement>(
+        driver.root_->probes->at(0)->stmts->at(3));
     EXPECT_EQ(CreateUInt64(), varC->var->type);
   }
 }
@@ -1682,13 +1695,15 @@ TEST(semantic_analyser, type_ctx)
   auto &stmts = driver.root_->probes->at(0)->stmts;
 
   // $x = (struct x*)ctx;
-  auto assignment = std::static_pointer_cast<ast::AssignVarStatement>(stmts->at(0));
+  auto assignment = std::static_pointer_cast<ast::AssignVarStatement>(
+      stmts->at(0));
   EXPECT_TRUE(assignment->var->type.IsPtrTy());
 
   // $a = $x->a;
   assignment = std::static_pointer_cast<ast::AssignVarStatement>(stmts->at(1));
   EXPECT_EQ(CreateInt64(), assignment->var->type);
-  auto fieldaccess = std::static_pointer_cast<ast::FieldAccess>(assignment->expr);
+  auto fieldaccess = std::static_pointer_cast<ast::FieldAccess>(
+      assignment->expr);
   EXPECT_EQ(CreateInt64(), fieldaccess->type);
   auto unop = std::static_pointer_cast<ast::Unop>(fieldaccess->expr);
   EXPECT_TRUE(unop->type.IsCtxAccess());
@@ -1698,7 +1713,8 @@ TEST(semantic_analyser, type_ctx)
   // $b = $x->b[0];
   assignment = std::static_pointer_cast<ast::AssignVarStatement>(stmts->at(2));
   EXPECT_EQ(CreateInt16(), assignment->var->type);
-  auto arrayaccess = std::static_pointer_cast<ast::ArrayAccess>(assignment->expr);
+  auto arrayaccess = std::static_pointer_cast<ast::ArrayAccess>(
+      assignment->expr);
   EXPECT_EQ(CreateInt16(), arrayaccess->type);
   fieldaccess = std::static_pointer_cast<ast::FieldAccess>(arrayaccess->expr);
   EXPECT_TRUE(fieldaccess->type.IsCtxAccess());
@@ -1787,7 +1803,8 @@ TEST(semantic_analyser, tuple_assign_var)
   auto &stmts = driver.root_->probes->at(0)->stmts;
 
   // $t = (1, "str");
-  auto assignment = std::static_pointer_cast<ast::AssignVarStatement>(stmts->at(0));
+  auto assignment = std::static_pointer_cast<ast::AssignVarStatement>(
+      stmts->at(0));
   EXPECT_EQ(ty, assignment->var->type);
 
   // $t = (4, "other");
@@ -1806,7 +1823,8 @@ TEST(semantic_analyser, tuple_assign_map)
   auto &stmts = driver.root_->probes->at(0)->stmts;
 
   // $t = (1, 3, 3, 7);
-  auto assignment = std::static_pointer_cast<ast::AssignMapStatement>(stmts->at(0));
+  auto assignment = std::static_pointer_cast<ast::AssignMapStatement>(
+      stmts->at(0));
   ty = CreateTuple(
       { CreateInt64(), CreateUInt64(), CreateUInt64(), CreateUInt64() });
   EXPECT_EQ(ty, assignment->map->type);
@@ -1830,7 +1848,8 @@ TEST(semantic_analyser, tuple_nested)
   auto &stmts = driver.root_->probes->at(0)->stmts;
 
   // $t = (1, "str");
-  auto assignment = std::static_pointer_cast<ast::AssignVarStatement>(stmts->at(0));
+  auto assignment = std::static_pointer_cast<ast::AssignVarStatement>(
+      stmts->at(0));
   EXPECT_EQ(ty, assignment->var->type);
 }
 

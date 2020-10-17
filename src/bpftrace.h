@@ -132,7 +132,8 @@ public:
   void request_finalize();
   bool is_aslr_enabled(int pid);
   std::string get_string_literal(const ast::Expression *expr) const;
-  std::string get_string_literal(const std::shared_ptr<ast::Expression> expr) const;
+  std::string get_string_literal(
+      const std::shared_ptr<ast::Expression> expr) const;
 
   std::string cmd_;
   bool finalize_ = false;

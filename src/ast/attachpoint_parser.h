@@ -13,7 +13,9 @@ namespace ast {
 class AttachPointParser
 {
 public:
-  AttachPointParser(std::shared_ptr<Program> root, BPFtrace &bpftrace, std::ostream &sink);
+  AttachPointParser(std::shared_ptr<Program> root,
+                    BPFtrace &bpftrace,
+                    std::ostream &sink);
   ~AttachPointParser() = default;
   int parse();
 

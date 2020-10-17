@@ -606,14 +606,15 @@ Value *IRBuilderBPF::CreateUSDTReadArgument(Value *ctx,
   return result;
 }
 
-Value *IRBuilderBPF::CreateUSDTReadArgument(Value *ctx,
-                                            std::shared_ptr<AttachPoint> attach_point,
-                                            int usdt_location_index,
-                                            int arg_num,
-                                            Builtin &builtin,
-                                            pid_t pid,
-                                            AddrSpace as,
-                                            const location &loc)
+Value *IRBuilderBPF::CreateUSDTReadArgument(
+    Value *ctx,
+    std::shared_ptr<AttachPoint> attach_point,
+    int usdt_location_index,
+    int arg_num,
+    Builtin &builtin,
+    pid_t pid,
+    AddrSpace as,
+    const location &loc)
 {
   assert(ctx && ctx->getType() == getInt8PtrTy());
   struct bcc_usdt_argument argument;

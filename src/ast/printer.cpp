@@ -106,7 +106,8 @@ void Printer::visit(Call &call)
 
   ++depth_;
   if (call.vargs) {
-    for (std::shared_ptr<Expression> expr : *call.vargs) {
+    for (std::shared_ptr<Expression> expr : *call.vargs)
+    {
       expr->accept(*this);
     }
   }
@@ -120,7 +121,8 @@ void Printer::visit(Map &map)
 
   ++depth_;
   if (map.vargs) {
-    for (std::shared_ptr<Expression> expr : *map.vargs) {
+    for (std::shared_ptr<Expression> expr : *map.vargs)
+    {
       expr->accept(*this);
     }
   }
@@ -266,13 +268,15 @@ void Printer::visit(If &if_block)
   ++depth_;
   out_ << indent << " then" << std::endl;
 
-  for (std::shared_ptr<Statement> stmt : *if_block.stmts) {
+  for (std::shared_ptr<Statement> stmt : *if_block.stmts)
+  {
     stmt->accept(*this);
   }
 
   if (if_block.else_stmts) {
     out_ << indent << " else" << std::endl;
-    for (std::shared_ptr<Statement> stmt : *if_block.else_stmts) {
+    for (std::shared_ptr<Statement> stmt : *if_block.else_stmts)
+    {
       stmt->accept(*this);
     }
   }
@@ -289,7 +293,8 @@ void Printer::visit(Unroll &unroll)
   out_ << indent << " block" << std::endl;
 
   ++depth_;
-  for (std::shared_ptr<Statement> stmt : *unroll.stmts) {
+  for (std::shared_ptr<Statement> stmt : *unroll.stmts)
+  {
     stmt->accept(*this);
   }
   depth_ -= 2;
@@ -337,7 +342,8 @@ void Printer::visit(AttachPoint &ap)
 
 void Printer::visit(Probe &probe)
 {
-  for (std::shared_ptr<AttachPoint> ap : *probe.attach_points) {
+  for (std::shared_ptr<AttachPoint> ap : *probe.attach_points)
+  {
     ap->accept(*this);
   }
 
@@ -345,7 +351,8 @@ void Printer::visit(Probe &probe)
   if (probe.pred) {
     probe.pred->accept(*this);
   }
-  for (std::shared_ptr<Statement> stmt : *probe.stmts) {
+  for (std::shared_ptr<Statement> stmt : *probe.stmts)
+  {
     stmt->accept(*this);
   }
   --depth_;

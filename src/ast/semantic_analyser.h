@@ -19,14 +19,13 @@ public:
                             BPFtrace &bpftrace,
                             std::ostream &out = std::cerr,
                             bool has_child = true)
-      : root_(root),
-        bpftrace_(bpftrace),
-        out_(out),
-        has_child_(has_child)
+      : root_(root), bpftrace_(bpftrace), out_(out), has_child_(has_child)
   {
   }
 
-  explicit SemanticAnalyser(std::shared_ptr<Node> root, BPFtrace &bpftrace, bool has_child)
+  explicit SemanticAnalyser(std::shared_ptr<Node> root,
+                            BPFtrace &bpftrace,
+                            bool has_child)
       : SemanticAnalyser(root, bpftrace, std::cerr, has_child)
   {
   }
@@ -86,7 +85,8 @@ private:
 
   void assign_map_type(const Map &map, const SizedType &type);
 
-  void builtin_args_tracepoint(std::shared_ptr<AttachPoint> attach_point, Builtin &builtin);
+  void builtin_args_tracepoint(std::shared_ptr<AttachPoint> attach_point,
+                               Builtin &builtin);
   ProbeType single_provider_type(void);
   template <typename T>
   int create_maps_impl(void);

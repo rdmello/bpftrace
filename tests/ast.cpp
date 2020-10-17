@@ -11,9 +11,12 @@ using bpftrace::ast::Probe;
 
 namespace {
 /* Convenience function to help generate attach point lists for testing */
-template <typename ...Args>
-std::shared_ptr<AttachPointList> make_attach_point_list(Args... args) {
-  const std::vector<std::shared_ptr<AttachPoint>> list = {std::make_shared<AttachPoint>(args)...};
+template <typename... Args>
+std::shared_ptr<AttachPointList> make_attach_point_list(Args... args)
+{
+  const std::vector<std::shared_ptr<AttachPoint>> list = {
+    std::make_shared<AttachPoint>(args)...
+  };
   return std::make_shared<AttachPointList>(list);
 }
 } // Anonymous namespace
@@ -65,7 +68,7 @@ TEST(ast, probe_name_uprobe)
   ap1.provider = "uprobe";
   ap1.target = "/bin/sh";
   ap1.func = "readline";
-  auto attach_points1 = make_attach_point_list( ap1 );
+  auto attach_points1 = make_attach_point_list(ap1);
   Probe uprobe1(attach_points1, nullptr, nullptr);
   EXPECT_EQ(uprobe1.name(), "uprobe:/bin/sh:readline");
 
@@ -73,7 +76,7 @@ TEST(ast, probe_name_uprobe)
   ap2.provider = "uprobe";
   ap2.target = "/bin/sh";
   ap2.func = "somefunc";
-  auto attach_points2 = make_attach_point_list( ap1, ap2 );
+  auto attach_points2 = make_attach_point_list(ap1, ap2);
   Probe uprobe2(attach_points2, nullptr, nullptr);
   EXPECT_EQ(uprobe2.name(), "uprobe:/bin/sh:readline,uprobe:/bin/sh:somefunc");
 
@@ -81,7 +84,7 @@ TEST(ast, probe_name_uprobe)
   ap3.provider = "uprobe";
   ap3.target = "/bin/sh";
   ap3.address = 1000;
-  auto attach_points3 = make_attach_point_list( ap1, ap2, ap3 );
+  auto attach_points3 = make_attach_point_list(ap1, ap2, ap3);
   Probe uprobe3(attach_points3, nullptr, nullptr);
   EXPECT_EQ(uprobe3.name(), "uprobe:/bin/sh:readline,uprobe:/bin/sh:somefunc,uprobe:/bin/sh:1000");
 
@@ -90,7 +93,7 @@ TEST(ast, probe_name_uprobe)
   ap4.target = "/bin/sh";
   ap4.func = "somefunc";
   ap4.func_offset = 10;
-  auto attach_points4 = make_attach_point_list( ap1, ap2, ap3, ap4 );
+  auto attach_points4 = make_attach_point_list(ap1, ap2, ap3, ap4);
   Probe uprobe4(attach_points4, nullptr, nullptr);
   EXPECT_EQ(uprobe4.name(), "uprobe:/bin/sh:readline,uprobe:/bin/sh:somefunc,uprobe:/bin/sh:1000,uprobe:/bin/sh:somefunc+10");
 
@@ -98,7 +101,7 @@ TEST(ast, probe_name_uprobe)
   ap5.provider = "uprobe";
   ap5.target = "/bin/sh";
   ap5.address = 10;
-  auto attach_points5 = make_attach_point_list( ap5 );
+  auto attach_points5 = make_attach_point_list(ap5);
   Probe uprobe5(attach_points5, nullptr, nullptr);
   EXPECT_EQ(uprobe5.name(), "uprobe:/bin/sh:10");
 
@@ -106,7 +109,7 @@ TEST(ast, probe_name_uprobe)
   ap6.provider = "uretprobe";
   ap6.target = "/bin/sh";
   ap6.address = 10;
-  auto attach_points6 = make_attach_point_list( ap6 );
+  auto attach_points6 = make_attach_point_list(ap6);
   Probe uprobe6(attach_points6, nullptr, nullptr);
   EXPECT_EQ(uprobe6.name(), "uretprobe:/bin/sh:10");
 }
@@ -117,7 +120,7 @@ TEST(ast, probe_name_usdt)
   ap1.provider = "usdt";
   ap1.target = "/bin/sh";
   ap1.func = "probe1";
-  auto attach_points1 = make_attach_point_list( ap1 );
+  auto attach_points1 = make_attach_point_list(ap1);
   Probe usdt1(attach_points1, nullptr, nullptr);
   EXPECT_EQ(usdt1.name(), "usdt:/bin/sh:probe1");
 
@@ -125,7 +128,7 @@ TEST(ast, probe_name_usdt)
   ap2.provider = "usdt";
   ap2.target = "/bin/sh";
   ap2.func = "probe2";
-  auto attach_points2 = make_attach_point_list( ap1, ap2 );
+  auto attach_points2 = make_attach_point_list(ap1, ap2);
   Probe usdt2(attach_points2, nullptr, nullptr);
   EXPECT_EQ(usdt2.name(), "usdt:/bin/sh:probe1,usdt:/bin/sh:probe2");
 }
@@ -142,7 +145,7 @@ TEST(ast, attach_point_name)
   ap3.provider = "uprobe";
   ap3.target = "/bin/sh";
   ap3.func = "readline";
-  auto attach_points = make_attach_point_list( ap1, ap2, ap3 );
+  auto attach_points = make_attach_point_list(ap1, ap2, ap3);
   Probe kprobe(attach_points, nullptr, nullptr);
   EXPECT_EQ(ap2.name("sys_thisone"), "kprobe:sys_thisone");
 

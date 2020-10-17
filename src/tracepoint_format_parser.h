@@ -26,14 +26,16 @@ public:
   };  // Leaf
   void visit(Call &call) override {
     if (call.vargs) {
-      for (std::shared_ptr<Expression> expr : *call.vargs) {
+      for (std::shared_ptr<Expression> expr : *call.vargs)
+      {
         expr->accept(*this);
       }
     }
   };
   void visit(Map &map) override {
     if (map.vargs) {
-      for (std::shared_ptr<Expression> expr : *map.vargs) {
+      for (std::shared_ptr<Expression> expr : *map.vargs)
+      {
         expr->accept(*this);
       }
     }
@@ -78,18 +80,21 @@ public:
   void visit(If &if_block) override {
     if_block.cond->accept(*this);
 
-    for (std::shared_ptr<Statement> stmt : *if_block.stmts) {
+    for (std::shared_ptr<Statement> stmt : *if_block.stmts)
+    {
       stmt->accept(*this);
     }
 
     if (if_block.else_stmts) {
-      for (std::shared_ptr<Statement> stmt : *if_block.else_stmts) {
+      for (std::shared_ptr<Statement> stmt : *if_block.else_stmts)
+      {
         stmt->accept(*this);
       }
     }
   };
   void visit(Unroll &unroll) override {
-    for (std::shared_ptr<Statement> stmt : *unroll.stmts) {
+    for (std::shared_ptr<Statement> stmt : *unroll.stmts)
+    {
       stmt->accept(*this);
     }
   };
@@ -108,13 +113,15 @@ public:
   void visit(__attribute__((unused)) AttachPoint &ap) override { };  // Leaf
   void visit(Probe &probe) override {
     probe_ = &probe;
-    for (std::shared_ptr<AttachPoint> ap : *probe.attach_points) {
+    for (std::shared_ptr<AttachPoint> ap : *probe.attach_points)
+    {
       ap->accept(*this);
     }
     if (probe.pred) {
       probe.pred->accept(*this);
     }
-    for (std::shared_ptr<Statement> stmt : *probe.stmts) {
+    for (std::shared_ptr<Statement> stmt : *probe.stmts)
+    {
       stmt->accept(*this);
     }
   };
@@ -123,12 +130,14 @@ public:
       probe->accept(*this);
   };
 
-  void analyse(std::shared_ptr<Probe> probe) {
+  void analyse(std::shared_ptr<Probe> probe)
+  {
     probe_ = probe.get();
     probe->accept(*this);
   }
+
 private:
-  Probe* probe_;
+  Probe *probe_;
 };
 } // namespace ast
 

@@ -13,7 +13,8 @@ namespace bpftrace {
 
 std::set<std::string> TracepointFormatParser::struct_list;
 
-bool TracepointFormatParser::parse(std::shared_ptr<ast::Program> program, BPFtrace &bpftrace)
+bool TracepointFormatParser::parse(std::shared_ptr<ast::Program> program,
+                                   BPFtrace &bpftrace)
 {
   std::vector<std::shared_ptr<ast::Probe>> probes_with_tracepoint;
   for (std::shared_ptr<ast::Probe> probe : *program->probes)

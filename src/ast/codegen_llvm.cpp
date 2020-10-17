@@ -2255,7 +2255,8 @@ AllocaInst *CodegenLLVM::getHistMapKey(Map &map, Value *log2)
     key = b_.CreateAllocaBPF(size, map.ident + "_key");
 
     int offset = 0;
-    for (std::shared_ptr<Expression> expr : *map.vargs) {
+    for (std::shared_ptr<Expression> expr : *map.vargs)
+    {
       auto scoped_del = accept(expr);
       Value *offset_val = b_.CreateGEP(key, {b_.getInt64(0), b_.getInt64(offset)});
       if (shouldBeOnStackAlready(expr->type))

@@ -124,8 +124,9 @@ void SemanticAnalyser::visit(Identifier &identifier)
   }
 }
 
-void SemanticAnalyser::builtin_args_tracepoint(std::shared_ptr<AttachPoint> attach_point,
-                                               Builtin &builtin)
+void SemanticAnalyser::builtin_args_tracepoint(
+    std::shared_ptr<AttachPoint> attach_point,
+    Builtin &builtin)
 {
   /*
    * tracepoint wildcard expansion, part 2 of 3. This:
@@ -450,7 +451,8 @@ void SemanticAnalyser::visit(Call &call)
   func_setter scope_bound_func_setter{ *this, call.func };
 
   if (call.vargs) {
-    for (std::shared_ptr<Expression> expr : *call.vargs) {
+    for (std::shared_ptr<Expression> expr : *call.vargs)
+    {
       expr->accept(*this);
     }
   }
@@ -592,8 +594,9 @@ void SemanticAnalyser::visit(Call &call)
         else
         {
           auto binop = std::dynamic_pointer_cast<Binop>(arg);
-          if (!(binop && (std::dynamic_pointer_cast<PositionalParameter>(binop->left) ||
-                          std::dynamic_pointer_cast<PositionalParameter>(binop->right))))
+          if (!(binop &&
+                (std::dynamic_pointer_cast<PositionalParameter>(binop->left) ||
+                 std::dynamic_pointer_cast<PositionalParameter>(binop->right))))
           {
             // Only str($1), str($1 + CONST), or str(CONST + $1) are allowed
             LOG(ERROR, call.loc, err_)
@@ -1252,7 +1255,9 @@ void SemanticAnalyser::visit(Map &map)
       if (expr->type.IsIntTy() && expr->type.size < 8)
       {
         std::string type = expr->type.IsSigned() ? "int64" : "uint64";
-        std::shared_ptr<Expression> cast = std::make_shared<ast::Cast>(type, false, expr);
+        std::shared_ptr<Expression> cast = std::make_shared<ast::Cast>(type,
+                                                                       false,
+                                                                       expr);
         cast->accept(*this);
         map.vargs->at(i) = cast;
         expr = cast;
@@ -1349,7 +1354,8 @@ void SemanticAnalyser::visit(ArrayAccess &arr)
 
     if (indextype.IsIntTy() && arr.indexpr->is_literal)
     {
-      std::shared_ptr<Integer> index = std::static_pointer_cast<Integer>(arr.indexpr);
+      std::shared_ptr<Integer> index = std::static_pointer_cast<Integer>(
+          arr.indexpr);
 
       if ((size_t) index->n >= type.size)
         LOG(ERROR, arr.loc, err_)
@@ -1656,7 +1662,8 @@ void SemanticAnalyser::visit(Unroll &unroll)
   {
     unroll.var = integer->n;
   }
-  else if (auto param = std::dynamic_pointer_cast<PositionalParameter>(unroll.expr))
+  else if (auto param = std::dynamic_pointer_cast<PositionalParameter>(
+               unroll.expr))
   {
     if (param->ptype == PositionalParameterType::count)
     {
@@ -2401,16 +2408,17 @@ void SemanticAnalyser::visit(Probe &probe)
   variable_val_.clear();
   probe_ = &probe;
 
-  for (std::shared_ptr<AttachPoint> ap : *probe.attach_points) {
+  for (std::shared_ptr<AttachPoint> ap : *probe.attach_points)
+  {
     ap->accept(*this);
   }
   if (probe.pred) {
     probe.pred->accept(*this);
   }
-  for (std::shared_ptr<Statement> stmt : *probe.stmts) {
+  for (std::shared_ptr<Statement> stmt : *probe.stmts)
+  {
     stmt->accept(*this);
   }
-
 }
 
 void SemanticAnalyser::visit(Program &program)
